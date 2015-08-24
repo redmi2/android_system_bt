@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (c) 2013, The Linux Foundation. All rights reserved.
+ *  Copyright (c) 2013, 2015, The Linux Foundation. All rights reserved.
  *  Not a Contribution.
  *  Copyright (c) 2014 The Android Open Source Project
  *  Copyright (C) 2009-2012 Broadcom Corporation
@@ -558,6 +558,11 @@ const char*  dump_rc_pdu(UINT8 pdu)
         CASE_RETURN_STR(AVRC_PDU_SET_ADDRESSED_PLAYER)
         CASE_RETURN_STR(AVRC_PDU_CHANGE_PATH)
         CASE_RETURN_STR(AVRC_PDU_GET_CAPABILITIES)
+        CASE_RETURN_STR(AVRC_PDU_GET_ITEM_ATTRIBUTES)
+        CASE_RETURN_STR(AVRC_PDU_GET_FOLDER_ITEMS)
+        CASE_RETURN_STR(AVRC_PDU_SET_BROWSED_PLAYER)
+        CASE_RETURN_STR(AVRC_PDU_PLAY_ITEM)
+        CASE_RETURN_STR(AVRC_PDU_GET_TOTAL_NUMBER_OF_ITEMS)
         default:
             return "Unknown PDU";
     }

@@ -696,7 +696,8 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
         if (p_attr)
         {
-#if SDP_AVRCP_1_5 == TRUE
+#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
+        (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
             /* Check for UUID Remote Control and Remote BD address  */
             is_avrcp_fallback = sdp_fallback_avrcp_version (p_attr, p_ccb->device_address);
             is_avrcp_browse_bit_reset = sdp_reset_avrcp_browsing_bit(
@@ -757,8 +758,15 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
             }
             if (is_avrcp_fallback)
             {
+#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
+                /* Update AVRCP version back to 1.6 */
+                p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
+#else
+#if (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE))
                 /* Update AVRCP version back to 1.5 */
                 p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x05;
+#endif
+#endif
                 is_avrcp_fallback = FALSE;
             }
             if (is_avrcp_browse_bit_reset)
@@ -780,8 +788,15 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     }
     if (is_avrcp_fallback)
     {
+#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
+        /* Update AVRCP version back to 1.6 */
+        p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
+#else
+#if (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE))
         /* Update AVRCP version back to 1.5 */
         p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x05;
+#endif
+#endif
         is_avrcp_fallback = FALSE;
     }
     if (is_avrcp_browse_bit_reset)
@@ -1040,7 +1055,8 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
             if (p_attr)
             {
-#if SDP_AVRCP_1_5 == TRUE
+#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
+        (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
                 /* Check for UUID Remote Control and Remote BD address  */
                 is_avrcp_fallback = sdp_fallback_avrcp_version (p_attr, p_ccb->device_address);
                 is_avrcp_browse_bit_reset = sdp_reset_avrcp_browsing_bit(
@@ -1106,8 +1122,15 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                 }
                 if (is_avrcp_fallback)
                 {
+#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
+                    /* Update AVRCP version back to 1.6 */
+                    p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
+#else
+#if (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE))
                     /* Update AVRCP version back to 1.5 */
                     p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x05;
+#endif
+#endif
                     is_avrcp_fallback = FALSE;
                 }
                 if (is_avrcp_browse_bit_reset)
@@ -1129,8 +1152,15 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         }
         if (is_avrcp_fallback)
         {
+#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
+            /* Update AVRCP version back to 1.6 */
+            p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
+#else
+#if (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE))
             /* Update AVRCP version back to 1.5 */
             p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x05;
+#endif
+#endif
             is_avrcp_fallback = FALSE;
         }
         if (is_avrcp_browse_bit_reset)
