@@ -93,6 +93,21 @@ const tBTA_AV_CO_FUNCTS bta_av_a2d_cos =
     bta_av_co_audio_delay
 };
 
+/* the call out functions for Sink audio stream */
+const tBTA_AV_CO_FUNCTS bta_avk_a2d_cos =
+{
+    bta_avk_co_audio_init,
+    bta_avk_co_audio_disc_res,
+    bta_avk_co_audio_getconfig,
+    bta_avk_co_audio_setconfig,
+    bta_avk_co_audio_open,
+    bta_avk_co_audio_close,
+    bta_avk_co_audio_start,
+    bta_avk_co_audio_stop,
+    bta_avk_co_audio_sink_data_path,
+    bta_avk_co_audio_delay
+};
+
 /* ssm action functions for audio stream */
 const tBTA_AV_SACT bta_av_a2d_action[] =
 {
@@ -1389,7 +1404,11 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             p_scb->avdt_version = AVDT_VERSION_SYNC;
 
 
-        if (p_scb->codec_type == BTA_AV_CODEC_SBC || num > 1)
+        if ((p_scb->codec_type == BTA_AV_CODEC_SBC)||
+#if defined(AAC_DECODER_INCLUDED) && (AAC_DECODER_INCLUDED == TRUE)
+            (p_scb->codec_type == BTA_AV_CODEC_M24)||
+#endif
+            (num > 1))
         {
             /* if SBC is used by the SNK as INT, discover req is not sent in bta_av_config_ind.
                        * call disc_res now */

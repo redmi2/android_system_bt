@@ -36,6 +36,9 @@
 #include "btif_media.h"
 #include "a2d_api.h"
 #include "a2d_sbc.h"
+#if defined(AAC_DECODER_INCLUDED) && (AAC_DECODER_INCLUDED == TRUE)
+#include "a2d_aac.h"
+#endif
 
 
 /*****************************************************************************

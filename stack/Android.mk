@@ -46,6 +46,7 @@ endif
 LOCAL_SRC_FILES:= \
     ./a2dp/a2d_api.c \
     ./a2dp/a2d_sbc.c \
+    ./a2dp/a2d_aac.c \
     ./avrc/avrc_api.c \
     ./avrc/avrc_sdp.c \
     ./avrc/avrc_opt.c \

@@ -34,6 +34,7 @@
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "bta_av_co.h"
+#include "bta_avk_co.h"
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
@@ -664,7 +665,6 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
             /* set up the audio stream control block */
             APPL_TRACE_EVENT("AV: set up the audio stream control block ");
             p_scb->p_act_tbl = (const tBTA_AV_ACT *)bta_av_a2d_action;
-            p_scb->p_cos     = &bta_av_a2d_cos;
             p_scb->media_type= AVDT_MEDIA_AUDIO;
             cs.cfg.psc_mask  = AVDT_PSC_TRANS;
             cs.media_type    = AVDT_MEDIA_AUDIO;
@@ -686,13 +686,13 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
             if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE)
             {
                 cs.tsep = AVDT_TSEP_SRC;
-                index = 0;
+                p_scb->p_cos     = &bta_av_a2d_cos;
             }
             else if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK)
             {
                 cs.tsep = AVDT_TSEP_SNK;
                 cs.p_data_cback = bta_av_stream_data_cback;
-                index = 1;
+                p_scb->p_cos     = &bta_avk_a2d_cos;
             }
             /* Initialize Handles to zero */
             for(xx=0; xx<BTA_AV_MAX_SEPS; xx++)
@@ -701,21 +701,23 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
             }
             /* keep the configuration in the stream control block */
             memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
-            if ((*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
-                &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
+            for (index = 0; index < (BTA_AV_MAX_SEPS-1); index++)
             {
-                if(AVDT_CreateStream(&p_scb->seps[index].av_handle, &cs) == AVDT_SUCCESS)
+                if ((p_scb->p_cos->init)(&codec_type, cs.cfg.codec_info,
+                    &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
                 {
-                    p_scb->seps[index].codec_type = codec_type;
-                    p_scb->seps[index].tsep = cs.tsep;
-                    if(cs.tsep == AVDT_TSEP_SNK)
-                        p_scb->seps[index].p_app_data_cback = p_data->api_reg.p_app_data_cback;
-                    else
-                        p_scb->seps[index].p_app_data_cback = NULL; /* In case of A2DP SOURCE we don't need a callback to handle media packets */
-
+                    if(AVDT_CreateStream(&p_scb->seps[index].av_handle, &cs) == AVDT_SUCCESS)
+                    {
+                        p_scb->seps[index].codec_type = codec_type;
+                        p_scb->seps[index].tsep = cs.tsep;
+                        if(cs.tsep == AVDT_TSEP_SNK)
+                            p_scb->seps[index].p_app_data_cback = p_data->api_reg.p_app_data_cback;
+                        else
+                            p_scb->seps[index].p_app_data_cback = NULL;
+                    /* In case of A2DP SOURCE we don't need a callback to handle media packets */
+                    }
                 }
             }
-
             if(!bta_av_cb.reg_audio)
             {
                 /* Initialize Handles to 0 */

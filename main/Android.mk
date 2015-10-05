@@ -41,8 +41,10 @@ LOCAL_SRC_FILES += \
     ../btif/src/btif_hl.c \
     ../btif/src/btif_sdp.c \
     ../btif/src/btif_media_task.c \
+    ../btif/src/btif_media_aac.c \
     ../btif/src/btif_pan.c \
     ../btif/src/btif_profile_queue.c \
+    ../btif/src/btif_a2dp_pcm_dump.c \
     ../btif/src/bluetoothTrack.cpp \
     ../btif/src/btif_rc.c \
     ../btif/src/btif_sm.c \
@@ -74,6 +76,7 @@ LOCAL_SRC_FILES+= \
     ../btif/co/bta_ag_co.c \
     ../btif/co/bta_dm_co.c \
     ../btif/co/bta_av_co.c \
+    ../btif/co/bta_avk_co.c \
     ../btif/co/bta_hh_co.c \
     ../btif/co/bta_hl_co.c \
     ../btif/co/bta_pan_co.c \
@@ -124,7 +127,9 @@ LOCAL_C_INCLUDES+= . \
 	$(LOCAL_PATH)/../utils/include \
 	$(bdroid_C_INCLUDES) \
 	external/tinyxml2 \
-	external/zlib
+	external/zlib \
+	external/aac/libAACdec/include \
+	external/aac/libSYS/include
 
 ifeq ($(BOARD_USES_WIPOWER), true)
     LOCAL_C_INCLUDES+= $(LOCAL_PATH)/../wipowerif/include
@@ -154,7 +159,8 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_STATIC_LIBRARIES := \
     libtinyxml2 \
-    libbt-qcom_sbc_decoder
+    libbt-qcom_sbc_decoder \
+    libFraunhoferAAC
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
     libbt-brcm_bta \
