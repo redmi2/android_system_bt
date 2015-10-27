@@ -12,7 +12,7 @@ struct list_node_t {
 typedef struct list_t {
   list_node_t *head;
   list_node_t *tail;
-  size_t length;
+  volatile size_t length;
   list_free_cb free_cb;
   const allocator_t *allocator;
 } list_t;
@@ -189,6 +189,23 @@ void list_foreach(const list_t *list, list_iter_cb callback) {
     for (list_node_t *node = list->head; node; ) {
       list_node_t *next = node->next;
       callback(node->data);
+      node = next;
+    }
+}
+
+// Iterates through the entire |list| and calls |callback| for each data element.
+// Passes the caller provided data along with node
+// If the list is empty, |callback| will never be called. It is safe to mutate the
+// list inside the callback. If an element is added before the node being visited,
+// there will be no callback for the newly-inserted node. Neither |list| nor
+// |callback| may be NULL.
+void list_foreach_ext(const list_t *list, list_iter_cb_ext callback, void *cb_data) {
+  assert(list != NULL);
+  assert(callback != NULL);
+  if (list)
+    for (list_node_t *node = list->head; node; ) {
+      list_node_t *next = node->next;
+      callback(node->data, cb_data);
       node = next;
     }
 }
