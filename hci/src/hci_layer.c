@@ -464,14 +464,14 @@ static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context)
     // Move it to the list of commands awaiting response
     pthread_mutex_lock(&commands_pending_response_lock);
     list_append(commands_pending_response, wait_entry);
-
-    non_repeating_timer_restart_if(command_response_timer, !list_is_empty(commands_pending_response));
     pthread_mutex_unlock(&commands_pending_response_lock);
 
     // Send it off
     low_power_manager->wake_assert();
     packet_fragmenter->fragment_and_dispatch(wait_entry->command);
     low_power_manager->transmit_done();
+
+    non_repeating_timer_restart_if(command_response_timer, !list_is_empty(commands_pending_response));
   }
 }
 
@@ -560,6 +560,14 @@ static void hal_says_data_ready(serial_data_type_t type) {
         incoming->index = 3;
         memcpy(incoming->buffer->data, &dev_ssr_event, 3);
         incoming->state = FINISHED;
+
+        //Reset SOC status to trigger hciattach service
+        if(property_set("bluetooth.status", "off") < 0) {
+            LOG_ERROR("SSR: Error resetting SOC status\n ");
+        } else {
+            ALOGE("SSR: SOC Status is reset\n ");
+        }
+
       } else {
         LOG_ERROR("error getting buffer for H/W event\n ");
         break;
@@ -709,9 +717,7 @@ static bool filter_incoming_event(BT_HDR *packet) {
 
   return false;
 intercepted:;
-  pthread_mutex_lock(&commands_pending_response_lock);
   non_repeating_timer_restart_if(command_response_timer, !list_is_empty(commands_pending_response));
-  pthread_mutex_unlock(&commands_pending_response_lock);
 
   if (wait_entry) {
     // If it has a callback, it's responsible for freeing the packet
