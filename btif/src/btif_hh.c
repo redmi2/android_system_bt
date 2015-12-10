@@ -883,6 +883,15 @@ static void btif_hh_upstreams_evt(UINT16 event, char* p_param)
                     bta_hh_co_destroy(p_dev->fd);
                     p_dev->fd = -1;
                 }
+                BTIF_TRACE_DEBUG("%s: local_vup = %d", __FUNCTION__, p_dev->local_vup);
+                if (p_dev->local_vup)
+                {
+                   /* If it is locally initiated VUP, remove the bond as ACL
+                    * got disconnected while VUP being processed.
+                    */
+                    p_dev->local_vup = FALSE;
+                    BTA_DmRemoveDevice((UINT8 *)p_dev->bd_addr.address);
+                }
                 btif_hh_cb.status = BTIF_HH_DEV_DISCONNECTED;
                 p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
                 HAL_CBACK(bt_hh_callbacks, connection_state_cb,&(p_dev->bd_addr), p_dev->dev_status);
