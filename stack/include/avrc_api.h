@@ -107,6 +107,7 @@
 #define AVRC_SUPF_TG_GROUP_NAVI         0x0020      /* Group Navigation */
 #define AVRC_SUPF_TG_BROWSE             0x0040      /* Browsing */
 #define AVRC_SUPF_TG_MULTI_PLAYER       0x0080      /* Muliple Media Player */
+#define AVRC_SUPF_TG_PLAYER_COVER_ART   0x0100      /* Cover Art */
 
 #define AVRC_META_SUCCESS               AVRC_SUCCESS
 #define AVRC_META_FAIL                  AVRC_FAIL

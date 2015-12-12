@@ -43,6 +43,10 @@
 tAVRC_CB avrc_cb;
 #endif
 
+#if (defined(AVCT_COVER_ART_INCLUDED) && (AVCT_COVER_ART_INCLUDED == TRUE))
+#define AVCT_CA_PSM     0X1021
+#endif
+
 /* update AVRC_NUM_PROTO_ELEMS if this constant is changed */
 const tSDP_PROTOCOL_ELEM  avrc_proto_list [] =
 {
@@ -50,7 +54,8 @@ const tSDP_PROTOCOL_ELEM  avrc_proto_list [] =
 #if SDP_AVCTP_1_4 == TRUE
     {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_4, 0}  }
 #else
-#if SDP_AVRCP_1_5 == TRUE
+#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
+        (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
     {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_4, 0}  }
 #else
 #if SDP_AVRCP_1_4 == TRUE
@@ -66,13 +71,27 @@ const tSDP_PROTOCOL_ELEM  avrc_proto_list [] =
 #endif
 };
 
+#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
+const tSDP_PROTO_LIST_ELEM  avrc_add_proto_list [] =
+{
+    {AVRC_NUM_PROTO_ELEMS,
+    {
+    {UUID_PROTOCOL_L2CAP, 1, {AVCT_BR_PSM, 0} },
+    {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_4, 0} }}},
+
+    {AVRC_NUM_PROTO_ELEMS,
+    {
+    {UUID_PROTOCOL_L2CAP, 1, {AVCT_CA_PSM, 0} },
+    {UUID_PROTOCOL_OBEX, 0,  {0,0} }}}
+};
+#else
 #if SDP_AVRCP_1_5 == TRUE
 const tSDP_PROTO_LIST_ELEM  avrc_add_proto_list [] =
 {
     {AVRC_NUM_PROTO_ELEMS,
     {
     {UUID_PROTOCOL_L2CAP, 1, {AVCT_BR_PSM, 0} },
-    {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_4, 0}  }}}
+    {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_4, 0}  }}},
 };
 #else
 #if SDP_AVRCP_1_4 == TRUE
@@ -83,6 +102,7 @@ const tSDP_PROTO_LIST_ELEM  avrc_add_proto_list [] =
     {UUID_PROTOCOL_L2CAP, 1, {AVCT_BR_PSM, 0} },
     {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_3, 0}  }}}
 };
+#endif
 #endif
 #endif
 
@@ -250,7 +270,6 @@ UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
     UINT16      count = 1;
     UINT16      class_list[2];
 
-
     AVRC_TRACE_API("AVRC_AddRecord uuid: %x", service_uuid);
 
     if( service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET && service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL )
@@ -265,7 +284,8 @@ UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
         count = 2;
     }
 #else
-#if SDP_AVRCP_1_5 == TRUE
+#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
+        (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
     if( service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL )
     {
         class_list[1] = UUID_SERVCLASS_AV_REM_CTRL_CONTROL;
@@ -287,6 +307,15 @@ UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
     result &= SDP_AddProtocolList(sdp_handle, AVRC_NUM_PROTO_ELEMS, (tSDP_PROTOCOL_ELEM *)avrc_proto_list);
 
     /* add profile descriptor list   */
+#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
+    /* additional protocol list to include browsing channel */
+    result &= SDP_AddAdditionProtoLists( sdp_handle, AVRC_NUM_ADDL_PROTO_ELEMS,
+                                        (tSDP_PROTO_LIST_ELEM *)avrc_add_proto_list);
+
+    /* Profile descriptro list */
+    result &= SDP_AddProfileDescriptorList(sdp_handle, UUID_SERVCLASS_AV_REMOTE_CONTROL,
+                                            AVRC_REV_1_6);
+#else
 #if SDP_AVRCP_1_5 == TRUE
     if (browse_supported)
     {
@@ -311,6 +340,7 @@ UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
 
 #else
     result &= SDP_AddProfileDescriptorList(sdp_handle, UUID_SERVCLASS_AV_REMOTE_CONTROL, AVRC_REV_1_0);
+#endif
 #endif
 #endif
 #endif
