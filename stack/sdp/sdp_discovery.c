@@ -80,6 +80,12 @@ static UINT8 *sdpu_build_uuid_seq (UINT8 *p_out, UINT16 num_uuids, tSDP_UUID *p_
     p_len = p_out;
     p_out += 1;
 
+    if (num_uuids > SDP_MAX_UUID_FILTERS)
+    {
+        SDP_TRACE_ERROR("SDP: num_uuids > SDP_MAX_UUID_FILTERS : %d",num_uuids);
+        num_uuids = SDP_MAX_UUID_FILTERS;
+    }
+
     /* Now, loop through and put in all the UUID(s) */
     for (xx = 0; xx < num_uuids; xx++, p_uuid_list++)
     {
