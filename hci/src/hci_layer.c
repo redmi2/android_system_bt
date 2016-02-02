@@ -713,6 +713,20 @@ static bool filter_incoming_event(BT_HDR *packet) {
       wait_entry->status_callback(status, wait_entry->command, wait_entry->context);
 
     goto intercepted;
+  } else if (event_code == HCI_VENDOR_SPECIFIC_EVT) {
+    uint8_t vs_opcode;
+    opcode = 0xFC00;
+    STREAM_TO_UINT8(vs_opcode, stream);
+    opcode |= vs_opcode;
+
+    // If it is a VS event, it won't be getting a command complete event
+    wait_entry = get_waiting_command(opcode);
+    if (wait_entry) {
+      buffer_allocator->free(wait_entry->command);
+      osi_free(wait_entry);
+    } else {
+      LOG_WARN("%s VS event with no matching command. opcode: 0x%x", __func__, opcode);
+    }
   }
 
   return false;
