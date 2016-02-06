@@ -125,6 +125,8 @@ struct a2dp_stream_common {
 struct a2dp_stream_out {
     struct audio_stream_out stream;
     struct a2dp_stream_common common;
+    uint64_t frames_presented; // frames written, never reset
+    uint64_t frames_rendered;  // frames written, reset on standby
 };
 
 struct a2dp_stream_in {
@@ -543,6 +545,7 @@ static int start_audio_datapath(struct a2dp_stream_common *common)
         return -1;
     }
 
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
     /* connect socket if not yet connected */
     if (common->audio_fd == AUDIO_SKT_DISCONNECTED)
     {
@@ -555,6 +558,9 @@ static int start_audio_datapath(struct a2dp_stream_common *common)
 
         common->state = AUDIO_A2DP_STATE_STARTED;
     }
+#else
+    common->state = AUDIO_A2DP_STATE_STARTED;
+#endif
 
     return 0;
 }
@@ -581,9 +587,11 @@ static int stop_audio_datapath(struct a2dp_stream_common *common)
 
     common->state = AUDIO_A2DP_STATE_STOPPED;
 
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
     /* disconnect audio path */
     skt_disconnect(common->audio_fd);
     common->audio_fd = AUDIO_SKT_DISCONNECTED;
+#endif
 
     return 0;
 }
@@ -606,10 +614,12 @@ static int suspend_audio_datapath(struct a2dp_stream_common *common, bool standb
     else
         common->state = AUDIO_A2DP_STATE_SUSPENDED;
 
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
     /* disconnect audio path */
     skt_disconnect(common->audio_fd);
 
     common->audio_fd = AUDIO_SKT_DISCONNECTED;
+#endif
 
     return 0;
 }
@@ -712,9 +722,14 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
             out->common.state = AUDIO_A2DP_STATE_STOPPED;
         else
             ERROR("write failed : stream suspended, avoid resetting state");
+    } else {
+        const size_t frames = bytes / audio_stream_out_frame_size(stream);
+        out->frames_rendered += frames;
+        out->frames_presented += frames;
     }
 
     DEBUG("wrote %d bytes out of %zu bytes", sent, bytes);
+
     return sent;
 }
 
@@ -792,9 +807,9 @@ static int out_standby(struct audio_stream *stream)
     DUT need to clear flag else start will not happen but
     Do nothing in SUSPENDED state. */
     if (out->common.state != AUDIO_A2DP_STATE_SUSPENDED)
-        retVal =  suspend_audio_datapath(&out->common, true);
-
-    pthread_mutex_unlock(&out->common.lock);
+        retVal = suspend_audio_datapath(&out->common, true);
+    out->frames_rendered = 0; // rendered is reset, presented is not
+    pthread_mutex_unlock (&out->common.lock);
 
     return retVal;
 }
@@ -815,12 +830,59 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
     int retval;
     int status = 0;
 
-    INFO("state %d", out->common.state);
+    INFO("out_set_parameters: state %d", out->common.state);
 
     parms = str_parms_create_str(kvpairs);
 
     /* dump params */
     str_parms_dump(parms);
+
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
+    retval = str_parms_get_str(parms, "A2dpStarted", keyval, sizeof(keyval));
+    if (retval >= 0)
+    {
+        INFO("out_set_parameters, param: A2dpStarted");
+        if (strcmp(keyval, "true") == 0)
+        {
+            INFO("out_set_parameters, value: true");
+            pthread_mutex_lock(&out->common.lock);
+            if (out->common.state == AUDIO_A2DP_STATE_SUSPENDED)
+            {
+                INFO("stream suspended");
+                status = -1;
+            }
+            else if ((out->common.state == AUDIO_A2DP_STATE_STOPPED) ||
+                (out->common.state == AUDIO_A2DP_STATE_STANDBY))
+            {
+                if (start_audio_datapath(&out->common) < 0)
+                {
+                    INFO("stream start failed");
+                    status = -1;
+                }
+            }
+            else if (out->common.state != AUDIO_A2DP_STATE_STARTED)
+            {
+                ERROR("stream not in stopped or standby");
+                status = -1;
+            }
+            pthread_mutex_unlock(&out->common.lock);
+            INFO("stream start completes with status: %d", status);
+        }
+        else if (strcmp(keyval, "false") == 0)
+        {
+            INFO("out_set_parameters, value: false");
+            pthread_mutex_lock(&out->common.lock);
+            if (out->common.state != AUDIO_A2DP_STATE_SUSPENDED)
+                status = suspend_audio_datapath(&out->common, true);
+            else
+            {
+                ERROR("stream alreday suspended");
+            }
+            pthread_mutex_unlock(&out->common.lock);
+            INFO("stream stop completes with status: %d", status);
+        }
+    }
+#endif
 
     retval = str_parms_get_str(parms, "closing", keyval, sizeof(keyval));
 
@@ -916,16 +978,45 @@ static int out_set_volume(struct audio_stream_out *stream, float left,
     return -ENOSYS;
 }
 
+static int out_get_presentation_position(const struct audio_stream_out *stream,
+                                         uint64_t *frames, struct timespec *timestamp)
+{
+    struct a2dp_stream_out *out = (struct a2dp_stream_out *)stream;
 
+    FNLOG();
+    if (stream == NULL || frames == NULL || timestamp == NULL)
+        return -EINVAL;
+
+    int ret = -EWOULDBLOCK;
+    pthread_mutex_lock(&out->common.lock);
+    uint64_t latency_frames = (uint64_t)out_get_latency(stream) * out->common.cfg.rate / 1000;
+    if (out->frames_presented >= latency_frames) {
+        *frames = out->frames_presented - latency_frames;
+        clock_gettime(CLOCK_MONOTONIC, timestamp); // could also be associated with out_write().
+        ret = 0;
+    }
+    pthread_mutex_unlock(&out->common.lock);
+    return ret;
+}
 
 static int out_get_render_position(const struct audio_stream_out *stream,
                                    uint32_t *dsp_frames)
 {
-    UNUSED(stream);
-    UNUSED(dsp_frames);
+    struct a2dp_stream_out *out = (struct a2dp_stream_out *)stream;
 
     FNLOG();
-    return -EINVAL;
+    if (stream == NULL || dsp_frames == NULL)
+        return -EINVAL;
+
+    pthread_mutex_lock(&out->common.lock);
+    uint64_t latency_frames = (uint64_t)out_get_latency(stream) * out->common.cfg.rate / 1000;
+    if (out->frames_rendered >= latency_frames) {
+        *dsp_frames = (uint32_t)(out->frames_rendered - latency_frames);
+    } else {
+        *dsp_frames = 0;
+    }
+    pthread_mutex_unlock(&out->common.lock);
+    return 0;
 }
 
 static int out_add_audio_effect(const struct audio_stream *stream, effect_handle_t effect)
@@ -1183,6 +1274,8 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     out->stream.set_volume = out_set_volume;
     out->stream.write = out_write;
     out->stream.get_render_position = out_get_render_position;
+    out->stream.get_presentation_position = out_get_presentation_position;
+
 
     /* initialize a2dp specifics */
     a2dp_stream_common_init(&out->common);

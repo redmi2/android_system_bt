@@ -187,6 +187,7 @@ typedef UINT16 tBTA_SEC;
 /* Ignore for Discoverable, Connectable only for LE modes */
 #define BTA_DM_LE_IGNORE           0xFF00
 
+#define BTA_APP_ID_PAN_MULTI    0xFE    /* app id for pan multiple connection */
 #define BTA_ALL_APP_ID          0xFF
 
 /* Discoverable Modes */
@@ -254,6 +255,7 @@ typedef UINT8 tBTA_AUTH_RESP;
 #define BTA_ANY_ROLE          0x00
 #define BTA_MASTER_ROLE_PREF  0x01
 #define BTA_MASTER_ROLE_ONLY  0x02
+#define BTA_SLAVE_ROLE_ONLY   0x03     /* Used for PANU only, skip role switch to master */
 
 typedef UINT8 tBTA_PREF_ROLES;
 
@@ -1027,6 +1029,9 @@ typedef struct
 /* HCI RAW Command Callback */
 typedef tBTM_RAW_CMPL_CB        tBTA_RAW_CMPL_CBACK;
 
+/* Vendor Specific Command Callback */
+typedef tBTM_VSC_CMPL_CB        tBTA_VENDOR_CMPL_CBACK;
+
 /* Search callback events */
 #define BTA_DM_INQ_RES_EVT              0       /* Inquiry result for a peer device. */
 #define BTA_DM_INQ_CMPL_EVT             1       /* Inquiry complete. */
@@ -1469,6 +1474,20 @@ extern void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, 
 **
 *******************************************************************************/
 extern tBTA_STATUS BTA_DmHciRawCommand (UINT16 opcode, UINT8 param_len,UINT8 *p_param_buf, tBTA_RAW_CMPL_CBACK *p_cback);
+
+/*******************************************************************************
+**
+** Function         BTA_DmVendorSpecificCommand
+**
+** Description      This function sends the vendor specific command
+**                  to the controller
+**
+**
+** Returns          tBTA_STATUS
+**
+*******************************************************************************/
+extern tBTA_STATUS BTA_DmVendorSpecificCommand (UINT16 opcode,
+            UINT8 param_len,UINT8 *p_param_buf, tBTA_VENDOR_CMPL_CBACK *p_cback);
 
 
 /*******************************************************************************

@@ -611,7 +611,8 @@ static void bond_state_changed(bt_status_t status, bt_bdaddr_t *bd_addr, bt_bond
         bdcpy(pairing_cb.bd_addr, bd_addr->address);
     } else {
         if ((!pairing_cb.sdp_attempts)&&
-            (bdcmp(bd_addr->address, pairing_cb.bd_addr) == 0))
+            ((bdcmp(bd_addr->address, pairing_cb.bd_addr) == 0) ||
+             (bdcmp(bd_addr->address, pairing_cb.static_bdaddr.address) == 0)))
             memset(&pairing_cb, 0, sizeof(pairing_cb));
         else
             BTIF_TRACE_DEBUG("%s: BR-EDR service discovery active", __func__);
@@ -3165,6 +3166,8 @@ static void btif_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             state = BT_BOND_STATE_NONE;
         } else {
             btif_dm_save_ble_bonding_keys();
+            BTA_GATTC_Refresh(bd_addr.address);
+            btif_dm_get_remote_services_by_transport(&bd_addr, BTA_GATT_TRANSPORT_LE);
         }
         BTA_GATTC_Refresh(bd_addr.address);
         if(!p_auth_cmpl->smp_over_br)
