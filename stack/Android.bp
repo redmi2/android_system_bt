@@ -36,6 +36,7 @@ cc_library_static {
         "system/bt/bta/sys",
         "system/bt/utils/include",
         "vendor/qcom/opensource/bluetooth_ext/system_bt_ext",
+        "vendor/qcom/opensource/bluetooth_ext/vhal/include",
     ],
     srcs: [
         "a2dp/a2dp_aac.cc",
@@ -172,6 +173,7 @@ cc_library_static {
     static_libs: [
         "libbt-hci",
         "libFraunhoferAAC",
+        "libbtdevice_ext",
     ],
     shared_libs: [
         "libcutils",

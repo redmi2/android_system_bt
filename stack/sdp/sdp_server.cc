@@ -41,9 +41,10 @@
 #include "device/include/interop.h"
 #include "btif/include/btif_storage.h"
 #include "device/include/interop_config.h"
+#include "device/include/profile_config.h"
 #include <cutils/properties.h>
 #include <hardware/bluetooth.h>
-
+#include <hardware/vendor.h>
 #include "btif/include/btif_storage.h"
 #include "btcore/include/bdaddr.h"
 #include "device/include/interop.h"
@@ -161,10 +162,18 @@ int sdp_get_stored_avrc_tg_version(BD_ADDR addr)
     int stored_ver = AVRC_REV_INVALID;
     struct blacklist_entry data;
     FILE *fp;
-
+    bool feature = false;
+    profile_info_t profile_info = AVRCP_0103_SUPPORT;
+    const profile_t profile = AVRCP_ID;
     SDP_TRACE_DEBUG("%s target BD Addr: %x:%x:%x", __func__,\
                         addr[0], addr[1], addr[2]);
 
+
+    feature = profile_feature_fetch(profile, profile_info);
+    if (feature == true) {
+        SDP_TRACE_ERROR("AVRCP feature flag is set to 1.3 hence aborting");
+        return stored_ver;
+    }
     fp = fopen(AVRC_PEER_VERSION_CONF_FILE, "rb");
     if (!fp) {
        SDP_TRACE_ERROR("%s unable to open AVRC Conf file for read: err: (%s)",\

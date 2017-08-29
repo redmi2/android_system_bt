@@ -42,8 +42,9 @@
 #include "osi/include/properties.h"
 #include "utl.h"
 #include <errno.h>
-
+#include <hardware/vendor.h>
 #include "device/include/interop.h"
+#include "device/include/profile_config.h"
 
 #if (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
@@ -1704,7 +1705,9 @@ bool bta_av_check_store_avrc_tg_version(BD_ADDR addr, uint16_t ver)
     struct blacklist_entry data;
     FILE *fp;
     bool is_file_updated = FALSE;
-
+    bool feature = false;
+    profile_info_t profile_info = AVRCP_0103_SUPPORT;
+    const profile_t profile = AVRCP_ID;
     APPL_TRACE_DEBUG("%s target BD Addr: %x:%x:%x", __func__,\
                         addr[0], addr[1], addr[2]);
     fp = fopen(AVRC_PEER_VERSION_CONF_FILE, "rb");
@@ -1747,7 +1750,16 @@ bool bta_av_check_store_avrc_tg_version(BD_ADDR addr, uint16_t ver)
             is_file_updated = TRUE;
         }
     }
-    return is_file_updated;
+    feature = profile_feature_fetch(profile, profile_info);
+    if (feature == true)
+    {
+        APPL_TRACE_ERROR("Force return False as AVRCP version is forced set to 1.3");
+        return false;
+    }
+    else
+    {
+        return is_file_updated;
+    }
 }
 /*******************************************************************************
  *
