@@ -62,6 +62,7 @@ typedef struct controller_t {
   bool (*supports_ble_coded_phy)(void);
   bool (*supports_ble_extended_advertising)(void);
   bool (*supports_ble_periodic_advertising)(void);
+  bool (*supports_ble_set_privacy_mode)(void);
 
   // Get the cached acl data sizes for the controller.
   uint16_t (*get_acl_data_size_classic)(void);
