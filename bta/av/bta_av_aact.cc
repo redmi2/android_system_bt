@@ -2671,8 +2671,8 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   suspend_rsp.status = BTA_AV_SUCCESS;
   if (err_code && (err_code != AVDT_ERR_BAD_STATE)) {
-    /* Disable suspend feature only with explicit rejection(not with timeout) */
-    if (err_code != AVDT_ERR_TIMEOUT) {
+    /* Disable suspend feature only with explicit rejection(not with timeout & connect error) */
+    if ((err_code != AVDT_ERR_TIMEOUT) && (err_code != AVDT_ERR_CONNECT)) {
       p_scb->suspend_sup = false;
     }
     suspend_rsp.status = BTA_AV_FAIL;
