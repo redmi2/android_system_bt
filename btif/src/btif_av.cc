@@ -1597,6 +1597,8 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
         uint8_t hdl = btif_av_get_av_hdl_from_idx(index);
         if (hdl >= 0) {
           bt_status_t status = btif_a2dp_source_setup_codec(hdl);
+          BTIF_TRACE_DEBUG("%s: hdl = %u, status : %x, enc_update_in_progress = %d",
+                                __func__, hdl, status, enc_update_in_progress);
           if (status == BT_STATUS_SUCCESS) {
             enc_update_in_progress = TRUE;
             btif_a2dp_on_started(NULL, true, btif_av_cb[index].bta_handle);
