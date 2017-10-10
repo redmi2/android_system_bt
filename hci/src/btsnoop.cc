@@ -66,10 +66,14 @@ static const uint64_t BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000ULL;
 
 static int logfile_fd = INVALID_FD;
 static std::mutex btsnoop_mutex;
+static std::mutex btSnoopFd_mutex;
 
 static int32_t packets_per_file;
 static int32_t packet_counter;
 static long int gmt_offset;
+static bool sock_snoop_active = false;
+
+extern bt_logger_interface_t *logger_interface;
 
 // TODO(zachoverflow): merge btsnoop and btsnoop_net together
 void btsnoop_net_open();
@@ -101,6 +105,7 @@ static future_t* start_up(void) {
     packets_per_file = osi_property_get_int32(BTSNOOP_MAX_PACKETS_PROPERTY,
                                               DEFAULT_BTSNOOP_SIZE);
     btsnoop_net_open();
+    START_SNOOP_LOGGING();
   }
 
   return NULL;
@@ -116,6 +121,7 @@ static future_t* shut_down(void) {
   if (logfile_fd != INVALID_FD) close(logfile_fd);
   logfile_fd = INVALID_FD;
 
+  STOP_SNOOP_LOGGING();
   btsnoop_net_close();
 
   return NULL;
@@ -195,6 +201,10 @@ static char* get_btsnoop_last_log_path(char* last_log_path,
 
 static void open_next_snoop_file() {
   packet_counter = 0;
+
+  std::lock_guard<std::mutex> lock(btSnoopFd_mutex);
+  if(sock_snoop_active)
+    return;
 
   if (logfile_fd != INVALID_FD) {
     close(logfile_fd);
@@ -278,7 +288,7 @@ static void btsnoop_write_packet(packet_type_t type, uint8_t* packet,
 
   if (logfile_fd != INVALID_FD) {
     packet_counter++;
-    if (packet_counter > packets_per_file) {
+    if (!sock_snoop_active && packet_counter > packets_per_file) {
       open_next_snoop_file();
     }
 
@@ -286,4 +296,11 @@ static void btsnoop_write_packet(packet_type_t type, uint8_t* packet,
                    {reinterpret_cast<void*>(packet), length_he - 1}};
     TEMP_FAILURE_RETRY(writev(logfile_fd, iov, 2));
   }
+}
+
+void update_snoop_fd(int snoop_fd) {
+  std::lock_guard<std::mutex> lock(btSnoopFd_mutex);
+  LOG_INFO(LOG_TAG, "%s Now writing to server socket", __func__);
+  sock_snoop_active = true;
+  logfile_fd = snoop_fd;
 }
