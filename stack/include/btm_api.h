@@ -982,6 +982,9 @@ extern uint16_t BTM_GetNumAclLinks(void);
 extern tBTM_STATUS BTM_SetQoS(BD_ADDR bd, FLOW_SPEC* p_flow,
                               tBTM_CMPL_CB* p_cb);
 
+extern tBTM_STATUS BTM_FlowSpec(BD_ADDR bd, tBT_FLOW_SPEC* p_flow,
+                              tBTM_CMPL_CB* p_cb);
+
 /*****************************************************************************
  *  (e)SCO CHANNEL MANAGEMENT FUNCTIONS
  ****************************************************************************/
