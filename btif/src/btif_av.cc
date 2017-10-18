@@ -1671,8 +1671,20 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
       btif_av_cb[index].flags &= ~BTIF_AV_FLAG_REMOTE_SUSPEND;
 
       if (btif_av_cb[index].peer_sep == AVDT_TSEP_SNK)
-        /* immediately stop transmission of frames while suspend is pending */
-        btif_a2dp_source_set_tx_flush(true);
+      {
+          if (btif_av_is_connected_on_other_idx(index)) {
+            if (!btif_av_is_playing_on_other_idx(index)) {
+              APPL_TRACE_WARNING("Suspend the AV Data channel");
+              //Flush and close media channel
+              btif_a2dp_source_set_tx_flush(true);
+            } else
+                APPL_TRACE_WARNING("Not flushing as one link is already streaming");
+          } else {
+            /* immediately flush any pending tx frames while suspend is pending */
+            APPL_TRACE_WARNING("Stop the AV Data channel");
+            btif_a2dp_source_set_tx_flush(true);
+          }
+      }
 
       if (btif_av_cb[index].peer_sep == AVDT_TSEP_SRC) {
         btif_a2dp_sink_set_rx_flush(true);
