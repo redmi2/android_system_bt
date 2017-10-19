@@ -1202,6 +1202,18 @@ uint16_t bta_av_chk_mtu(tBTA_AV_SCB* p_scb, UNUSED_ATTR uint16_t mtu) {
   int i;
   uint8_t mask;
 
+    /* If multicast is not enabled we do not need to assign lesser MTU even if multi connections are
+  avaialable as when active device changes it configures encoder accordingly with proper MTU size
+  This change is required only if multicast is enabled as that requires duplication of same packetes
+  to two different channels and this logic helps to choose lesser MTU to avoid fragmentation*/
+
+    if (!is_multicast_enabled)
+    {
+        APPL_TRACE_DEBUG("bta_av_chk_mtu Non-multicast, conn_audio:0x%x, ret:%d",
+                                                bta_av_cb.conn_audio, mtu);
+        return mtu;
+    }
+
   /* TODO_MV mess with the mtu according to the number of EDR/non-EDR headsets
    */
   if (p_scb->chnl == BTA_AV_CHNL_AUDIO) {
@@ -1212,7 +1224,7 @@ uint16_t bta_av_chk_mtu(tBTA_AV_SCB* p_scb, UNUSED_ATTR uint16_t mtu) {
         if ((p_scb != p_scbi) && p_scbi &&
             (p_scbi->chnl == BTA_AV_CHNL_AUDIO)) {
           mask = BTA_AV_HNDL_TO_MSK(i);
-          APPL_TRACE_DEBUG("[%d] mtu: %d, mask:0x%x", i, p_scbi->stream_mtu,
+          APPL_TRACE_DEBUG("%s: [%d] mtu: %d, mask:0x%x", __func__, i, p_scbi->stream_mtu,
                            mask);
           if (bta_av_cb.conn_audio & mask) {
             if (ret_mtu > p_scbi->stream_mtu) ret_mtu = p_scbi->stream_mtu;

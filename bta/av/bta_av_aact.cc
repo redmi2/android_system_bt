@@ -1434,7 +1434,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: l2c_cid: 0x%x stream_mtu: %d mtu: %d", __func__,
                    p_scb->l2c_cid, p_scb->stream_mtu, mtu);
   if (mtu == 0 || mtu > p_scb->stream_mtu) mtu = p_scb->stream_mtu;
-
+  APPL_TRACE_DEBUG("%s:updated mtu: %d", __func__, mtu);
   /* Set the media channel as high priority */
   L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_HIGH);
   L2CA_SetChnlFlushability(p_scb->l2c_cid, true);
@@ -2752,6 +2752,7 @@ void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     APPL_TRACE_DEBUG("%s: l2c_cid: 0x%x stream_mtu: %d mtu: %d", __func__,
                      p_scb->l2c_cid, p_scb->stream_mtu, mtu);
     if (mtu == 0 || mtu > p_scb->stream_mtu) mtu = p_scb->stream_mtu;
+    APPL_TRACE_DEBUG("%s: updated mtu: %d", __func__, mtu);
     p_scb->p_cos->update_mtu(p_scb->hndl, mtu);
   }
 

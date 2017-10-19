@@ -3542,7 +3542,7 @@ static void btif_av_update_current_playing_device(int index) {
  * Returns          int
  *
  ******************************************************************************/
-static int btif_av_get_current_playing_dev_idx(void)
+int btif_av_get_current_playing_dev_idx(void)
 {
   int i;
 
