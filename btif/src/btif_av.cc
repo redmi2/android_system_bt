@@ -1784,20 +1784,20 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
 
       BTIF_TRACE_DEBUG("%s: local suspend flag: %d", __func__,
               btif_av_cb[index].flags & BTIF_AV_FLAG_LOCAL_SUSPEND_PENDING);
-      if (btif_av_cb[index].flags & BTIF_AV_FLAG_LOCAL_SUSPEND_PENDING)
+
+      if ((!enable_multicast)&& btif_av_cb[index].is_suspend_for_remote_start
+            && (btif_av_is_playing_on_other_idx(index)))
       {
-        BTIF_TRACE_DEBUG("%s: report upper layers audio state stopped:", __func__);
-        btif_report_audio_state(BTAV_AUDIO_STATE_STOPPED, &(btif_av_cb[index].peer_bda));
+        BTIF_TRACE_IMP("%s Don't update audio state change to app for idx =%d", __func__, index);
+        btif_av_cb[index].is_device_playing = false;
+        btif_av_cb[index].current_playing = false;
+        btif_av_update_current_playing_device(index);
       }
       else
       {
-        if ((!enable_multicast)&& btif_av_cb[index].is_suspend_for_remote_start
-                && (btif_av_is_playing_on_other_idx(index)))
+        if (btif_av_cb[index].flags & BTIF_AV_FLAG_LOCAL_SUSPEND_PENDING)
         {
-          BTIF_TRACE_IMP("%s Don't update audio state change to app for idx =%d", __func__, index);
-          btif_av_cb[index].is_device_playing = false;
-          btif_av_cb[index].current_playing = false;
-          btif_av_update_current_playing_device(index);
+          btif_report_audio_state(BTAV_AUDIO_STATE_STOPPED, &(btif_av_cb[index].peer_bda));
         }
         else
         {
