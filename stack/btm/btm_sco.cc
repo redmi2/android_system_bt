@@ -1694,10 +1694,12 @@ bool btm_is_sco_active_by_bdaddr(BD_ADDR remote_bda) {
   for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if ((!memcmp(p->esco.data.bd_addr, remote_bda, BD_ADDR_LEN)) &&
         (p->state == SCO_ST_CONNECTED)) {
+        APPL_TRACE_DEBUG("%s: Sco is active", __func__);
       return (true);
     }
   }
 #endif
+  APPL_TRACE_DEBUG("%s: Sco is not active", __func__);
   return (false);
 }
 

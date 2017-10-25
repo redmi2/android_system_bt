@@ -806,14 +806,17 @@ void bta_av_switch_role(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   if (p_scb->q_tag == BTA_AV_Q_TAG_OPEN) {
     if (bta_av_switch_if_needed(p_scb) ||
         !bta_av_link_role_ok(p_scb, A2DP_SET_MULTL_BIT)) {
+      APPL_TRACE_DEBUG("%s: Role switch request in progress", __func__);
       p_scb->wait |= BTA_AV_WAIT_ROLE_SW_RES_OPEN;
     } else {
       /* this should not happen in theory. Just in case...
        * continue to do_disc_a2dp */
+      APPL_TRACE_DEBUG("%s: Role switch request completed", __func__);
       switch_res = BTA_AV_RS_DONE;
     }
   } else {
     /* report failure on OPEN */
+    APPL_TRACE_DEBUG("%s: Role switch request failed", __func__);
     switch_res = BTA_AV_RS_FAIL;
   }
 
@@ -821,6 +824,7 @@ void bta_av_switch_role(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     if (bta_av_cb.rs_idx == (p_scb->hdi + 1)) {
       bta_av_cb.rs_idx = 0;
     }
+    APPL_TRACE_DEBUG("%s: Role switch request to be retried", __func__);
     p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_RETRY;
     p_scb->q_tag = 0;
     p_buf->switch_res = switch_res;
@@ -972,6 +976,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                sizeof(tBTA_AV_API_OPEN));
         p_scb->wait |= BTA_AV_WAIT_ROLE_SW_RES_OPEN;
         p_scb->q_tag = BTA_AV_Q_TAG_OPEN;
+        APPL_TRACE_DEBUG("%s: AV Role switch triggered", __func__);
       } else {
         ok_continue = true;
       }
@@ -989,6 +994,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       if (bta_av_link_role_ok(p_scb, A2DP_SET_MULTL_BIT)) {
         ok_continue = true;
       } else {
+        APPL_TRACE_DEBUG("%s: Role not proper yet, wait", __func__);
         p_scb->wait |= BTA_AV_WAIT_ROLE_SW_RES_OPEN;
       }
       break;
@@ -1014,13 +1020,15 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
           ((bta_av_cb.conn_audio & mask) || /* connected audio */
           (bta_av_cb.conn_video & mask))) {  /* connected video */
           BTM_GetRole(p_scbi->peer_addr, &role);
+          APPL_TRACE_DEBUG("%s:Current role for idx %d is %d",__func__, p_scb->hdi, role);
           if (BTM_ROLE_MASTER != role) {
             if (!interop_database_match_addr(INTEROP_DISABLE_ROLE_SWITCH,
                                           (bt_bdaddr_t *)p_scbi->peer_addr)) {
+              APPL_TRACE_DEBUG("%s:RS disabled, returning",__func__);
               return;
             }else {
-              APPL_TRACE_DEBUG("%s:other connected remote is blacklisted for RS",__func__);
-              APPL_TRACE_DEBUG("%s:RS is not possible, continue avdtp signaling",__func__);
+              APPL_TRACE_DEBUG("%s: Other connected remote is blacklisted for RS",__func__);
+              APPL_TRACE_DEBUG("%s: RS is not possible, continue avdtp signaling",__func__);
             }
           }
         }
@@ -1035,6 +1043,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
 
   if (p_scb->wait & BTA_AV_WAIT_CHECK_RC) {
+    APPL_TRACE_DEBUG("%s: Start RC Timer, wait:x%x",__func__, p_scb->wait);
     p_scb->wait &= ~BTA_AV_WAIT_CHECK_RC;
     bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RC_DISC_TIME_VAL,
                         BTA_AV_AVRC_TIMER_EVT, p_scb->hndl);

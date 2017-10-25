@@ -586,6 +586,12 @@ tBTM_STATUS BTM_SwitchRole(BD_ADDR remote_bd_addr, uint8_t new_role,
   tBTM_PM_PWR_MD settings;
   BD_ADDR_PTR p_bda;
 
+#if (BTM_SCO_INCLUDED == TRUE)
+    /* Check if there is any SCO Active on this BD Address */
+    is_sco_active = btm_is_sco_active_by_bdaddr(remote_bd_addr);
+    if (is_sco_active == true) return (BTM_NO_RESOURCES);
+#endif
+
   /* Make sure the local/remote devices supports switching */
   if (!btm_dev_support_switch(remote_bd_addr))
     return(BTM_MODE_UNSUPPORTED);
@@ -609,13 +615,6 @@ tBTM_STATUS BTM_SwitchRole(BD_ADDR remote_bd_addr, uint8_t new_role,
                 INTEROP_DISABLE_ROLE_SWITCH, (bt_bdaddr_t *)&remote_address)) ||
                 (!btm_cb.is_wifi_connected && (btm_get_bredr_acl_count() <= 1)))
       return(BTM_SUCCESS);
-
-#if (BTM_SCO_INCLUDED == TRUE)
-  /* Check if there is any SCO Active on this BD Address */
-  is_sco_active = btm_is_sco_active_by_bdaddr(remote_bd_addr);
-
-  if (is_sco_active == true) return (BTM_NO_RESOURCES);
-#endif
 
   /* Ignore role switch request if the previous request was not completed */
   if (p->switch_role_state != BTM_ACL_SWKEY_STATE_IDLE) {
