@@ -42,6 +42,7 @@
 #include "osi/include/properties.h"
 #include "osi/include/time.h"
 #include "stack_config.h"
+#include "l2c_api.h"
 
 // The number of of packets per btsnoop file before we rotate to the next
 // file. As of right now there are two snoop files that are rotated through.
@@ -64,6 +65,7 @@ typedef enum {
 // Epoch in microseconds since 01/01/0000.
 static const uint64_t BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000ULL;
 
+static bool media_capture = true;
 static int logfile_fd = INVALID_FD;
 static std::mutex btsnoop_mutex;
 static std::mutex btSnoopFd_mutex;
@@ -79,6 +81,7 @@ extern bt_logger_interface_t *logger_interface;
 void btsnoop_net_open();
 void btsnoop_net_close();
 void btsnoop_net_write(const void* data, size_t length);
+static bool is_avdt_media_packet(const uint8_t *p, bool is_local_cid);
 
 static void delete_btsnoop_files();
 static bool is_btsnoop_enabled();
@@ -107,6 +110,8 @@ static future_t* start_up(void) {
     btsnoop_net_open();
     START_SNOOP_LOGGING();
   }
+  media_capture = vendor_logging_level&HCI_SNOOP_LOG_FULL;
+  LOG_ERROR(LOG_TAG, "%s: A2DP media snoop-capture status: %d", __func__, media_capture);
 
   return NULL;
 }
@@ -152,7 +157,8 @@ static void capture(const BT_HDR* buffer, bool is_received) {
       break;
     case MSG_HC_TO_STACK_HCI_ACL:
     case MSG_STACK_TO_HC_HCI_ACL:
-      btsnoop_write_packet(kAclPacket, p, is_received, timestamp_us);
+      if(media_capture || (!is_avdt_media_packet(p, is_received)))
+        btsnoop_write_packet(kAclPacket, p, is_received, timestamp_us);
       break;
     case MSG_HC_TO_STACK_HCI_SCO:
     case MSG_STACK_TO_HC_HCI_SCO:
@@ -303,4 +309,16 @@ void update_snoop_fd(int snoop_fd) {
   LOG_INFO(LOG_TAG, "%s Now writing to server socket", __func__);
   sock_snoop_active = true;
   logfile_fd = snoop_fd;
+}
+
+static bool is_avdt_media_packet(const uint8_t *p, bool is_received) {
+  uint16_t cid, handle;
+  bool is_local_cid = is_received;
+  /*is_received signifies Rx packet so packet will have local_cid at offset 6
+   * Tx packet with is_received as false and have remote_cid at the offset*/
+
+  handle = (uint16_t)((p[0] + (p[1] << 8)) & 0x0FFF);
+  cid =  (uint16_t)(p[6] + (p[7] << 8));
+
+  return L2CA_isMediaChannel(handle, cid, is_local_cid);
 }

@@ -44,6 +44,18 @@ typedef enum  {
     STOP_LOGGING_SIGNAL,
 } CommandTypes;
 
+/*
+** Set property: "persist.bt_logger.log_mask" by ORing these features
+
+** Example: To enable Full snoop logging and Dynamic logcat logs capture,
+** property value should be (HCI_SNOOP_LOG_FULL|DYNAMIC_LOGCAT_CAPTURE) = 3
+*/
+typedef enum {
+    HCI_SNOOP_LOG_LITE = 0,     // Always enabled, hci snoop logs sans media packets
+    HCI_SNOOP_LOG_FULL = 1,     // Complete hci snoop logs with media packets
+    DYNAMIC_LOGCAT_CAPTURE = 2,  // Level 6 logcat logs over logger socket
+} LoggingFlags;
+
 void init_vnd_Logger(void);
 void clean_vnd_logger(void);
 
@@ -72,6 +84,8 @@ typedef struct {
     int  (*cleanup)(void);
 
 } bt_logger_interface_t;
+
+extern uint16_t vendor_logging_level;
 
 #define GENERATE_VND_LOGS() if(logger_interface)logger_interface->send_event(GENERATE_VND_LOG_SIGNAL)
 #define START_SNOOP_LOGGING() if(logger_interface)logger_interface->send_event(START_SNOOP_SIGNAL)
