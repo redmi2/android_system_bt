@@ -132,6 +132,7 @@ struct a2dp_audio_device {
 struct a2dp_config {
   uint32_t rate;
   uint32_t channel_mask;
+  bool is_stereo_to_mono;   //True if fetching Stereo and mixing into Mono
   int format;
 };
 
@@ -667,24 +668,34 @@ static int a2dp_read_output_audio_config(
   switch (codec_config->channel_mode) {
     case BTAV_A2DP_CODEC_CHANNEL_MODE_MONO:
       stream_config.channel_mask = AUDIO_CHANNEL_OUT_MONO;
+      stream_config.is_stereo_to_mono = true;
       break;
     case BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO:
       stream_config.channel_mask = AUDIO_CHANNEL_OUT_STEREO;
+      stream_config.is_stereo_to_mono = false;
       break;
     case BTAV_A2DP_CODEC_CHANNEL_MODE_NONE:
     default:
       ERROR("Invalid channel mode: 0x%x", codec_config->channel_mode);
       return -1;
   }
+  if (stream_config.is_stereo_to_mono) {
+    stream_config.channel_mask = AUDIO_CHANNEL_OUT_STEREO;
+  }
 
   // Update the output stream configuration
   if (update_stream_config) {
     common->cfg.rate = stream_config.rate;
     common->cfg.channel_mask = stream_config.channel_mask;
+    common->cfg.is_stereo_to_mono = stream_config.is_stereo_to_mono;
     common->cfg.format = stream_config.format;
     common->buffer_sz = audio_a2dp_hw_stream_compute_buffer_size(
         codec_config->sample_rate, codec_config->bits_per_sample,
         codec_config->channel_mode);
+    if (common->cfg.is_stereo_to_mono) {
+      // We need to fetch twice as much data from the Audio framework
+      common->buffer_sz *= 2;
+    }
   }
 
   INFO(
@@ -755,7 +766,11 @@ static int a2dp_write_output_audio_config(struct a2dp_stream_common* common) {
       codec_config.channel_mode = BTAV_A2DP_CODEC_CHANNEL_MODE_MONO;
       break;
     case AUDIO_CHANNEL_OUT_STEREO:
-      codec_config.channel_mode = BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO;
+      if (common->cfg.is_stereo_to_mono) {
+        codec_config.channel_mode = BTAV_A2DP_CODEC_CHANNEL_MODE_MONO;
+      } else {
+        codec_config.channel_mode = BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO;
+      }
       break;
     default:
       ERROR("Invalid channel mask: 0x%x", common->cfg.channel_mask);
@@ -962,6 +977,7 @@ static ssize_t out_write(struct audio_stream_out* stream, const void* buffer,
   #ifdef BT_AUDIO_SYSTRACE_LOG
   char trace_buf[512];
   #endif
+  size_t write_bytes = bytes;
 
   DEBUG("write %zu bytes (fd %d)", bytes, out->common.audio_fd);
 
@@ -991,6 +1007,19 @@ static ssize_t out_write(struct audio_stream_out* stream, const void* buffer,
 
   ts_error_log("a2dp_out_write", bytes, out->common.buffer_sz, out->common.cfg);
 
+  // Mix the stereo into mono if necessary
+  if (out->common.cfg.is_stereo_to_mono) {
+    const size_t frames = bytes / audio_stream_out_frame_size(stream);
+    int16_t* src = (int16_t*)buffer;
+    int16_t* dst = (int16_t*)buffer;
+    for (size_t i = 0; i < frames; i++, dst++, src += 2) {
+      *dst = (int16_t)(((int32_t)src[0] + (int32_t)src[1]) >> 1);
+    }
+    write_bytes /= 2;
+    DEBUG("stereo-to-mono mixing: write %zu bytes (fd %d)", write_bytes,
+          out->common.audio_fd);
+  }
+
   lock.unlock();
   #ifdef BT_AUDIO_SYSTRACE_LOG
   snprintf(trace_buf, 32, "out_write:");
@@ -999,7 +1028,7 @@ static ssize_t out_write(struct audio_stream_out* stream, const void* buffer,
       ATRACE_BEGIN(trace_buf);
   }
   #endif
-  sent = skt_write(out->common.audio_fd, buffer, bytes);
+  sent = skt_write(out->common.audio_fd, buffer, write_bytes);
   #ifdef BT_AUDIO_SYSTRACE_LOG
   if (PERF_SYSTRACE)
   {
