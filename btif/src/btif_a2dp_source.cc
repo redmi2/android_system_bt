@@ -661,8 +661,10 @@ static void btif_a2dp_source_audio_feeding_update_event(BT_HDR* p_msg) {
 }
 
 void btif_a2dp_source_on_idle(void) {
+#ifdef ENABLE_SPLIT_A2DP
   if (btif_av_is_split_a2dp_enabled())
     btif_media_send_reset_vendor_state();
+#endif // ENABLE_SPLIT_A2DP
   if (btif_a2dp_source_state == BTIF_A2DP_SOURCE_STATE_OFF) return;
 
   /* Make sure media task is stopped */
