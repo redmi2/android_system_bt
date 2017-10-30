@@ -153,9 +153,11 @@ static bool bta_av_co_set_codec_ota_config(tBTA_AV_CO_PEER* p_peer,
 
 /* externs */
 extern int btif_max_av_clients;
+#ifdef ENABLE_SPLIT_A2DP
 extern tBTA_AV_HNDL btif_av_get_reconfig_dev_hndl();
 extern void btif_av_reset_codec_reconfig_flag();
 extern bool bt_split_a2dp_enabled;
+#endif // ENABLE_SPLIT_A2DP
 /*******************************************************************************
  **
  ** Function         bta_av_co_cp_get_flag
@@ -928,14 +930,18 @@ static tBTA_AV_CO_SINK* bta_av_co_audio_set_codec(tBTA_AV_CO_PEER* p_peer) {
   // Select the codec
   for (const auto& iter : bta_av_co_cb.codecs->orderedSourceCodecs()) {
     APPL_TRACE_DEBUG("%s: trying codec %s", __func__, iter->name().c_str());
+#ifdef ENABLE_SPLIT_A2DP
     if (bt_split_a2dp_enabled && (!strcmp(iter->name().c_str(),"AAC")) && (interop_match_addr(INTEROP_DISABLE_AAC_CODEC, &bt_addr)))
     {
       APPL_TRACE_DEBUG("AAC is not supported for this remote device");
     }
     else
     {
+#endif // ENABLE_SPLIT_A2DP
      p_sink = bta_av_co_audio_codec_selected(*iter, p_peer);
+#ifdef ENABLE_SPLIT_A2DP
     }
+#endif // ENABLE_SPLIT_A2DP
     if (p_sink != NULL) {
       APPL_TRACE_DEBUG("%s: selected codec %s", __func__, iter->name().c_str());
       break;
@@ -1127,12 +1133,16 @@ bool bta_av_co_set_codec_user_config(
   bool restart_output = false;
   bool config_updated = false;
   bool success = true;
+#ifdef ENABLE_SPLIT_A2DP
   tBTA_AV_HNDL hndl = btif_av_get_reconfig_dev_hndl();
+#endif // ENABLE_SPLIT_A2DP
   // Find the peer that is currently open
   tBTA_AV_CO_PEER* p_peer = nullptr;
+#ifdef ENABLE_SPLIT_A2DP
   if (hndl > 0)
     p_peer = bta_av_co_get_peer(hndl);
   else {
+#endif // ENABLE_SPLIT_A2DP
     for (size_t i = 0; i < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); i++) {
       tBTA_AV_CO_PEER* p_peer_tmp = &bta_av_co_cb.peers[i];
       if (p_peer_tmp->opened) {
@@ -1140,7 +1150,9 @@ bool bta_av_co_set_codec_user_config(
         break;
       }
     }
+#ifdef ENABLE_SPLIT_A2DP
   }
+#endif // ENABLE_SPLIT_A2DP
   if (p_peer == nullptr) {
     APPL_TRACE_ERROR("%s: no open peer to configure", __func__);
     success = false;
@@ -1205,6 +1217,7 @@ done:
   bdcpy(bt_addr.address, p_peer->addr);
   btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, &bt_addr,
                          sizeof(bt_bdaddr_t));
+#ifdef ENABLE_SPLIT_A2DP
   if (!success || !restart_output) {
     APPL_TRACE_DEBUG("%s:reseting codec reconfig flag",__func__);
     btif_av_reset_codec_reconfig_flag();
@@ -1213,6 +1226,7 @@ done:
                    bt_addr.address[0], bt_addr.address[1], bt_addr.address[2],
                    bt_addr.address[3], bt_addr.address[4], bt_addr.address[5]);
 
+#endif // ENABLE_SPLIT_A2DP
   return success;
 }
 
@@ -1422,7 +1436,9 @@ void bta_av_co_init(
     const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
   APPL_TRACE_DEBUG("%s", __func__);
   bt_bdaddr_t bt_addr;
+#ifdef ENABLE_SPLIT_A2DP
   char value[PROPERTY_VALUE_MAX] = {'\0'};
+#endif // ENABLE_SPLIT_A2DP
   /* Reset the control block */
   bta_av_co_cb.reset();
 
@@ -1437,17 +1453,21 @@ void bta_av_co_init(
   mutex_global_lock();
   bta_av_co_cb.codecs = new A2dpCodecs(codec_priorities);
 /* SPLITA2DP */
+#ifdef ENABLE_SPLIT_A2DP
   bool a2dp_offload = btif_av_is_split_a2dp_enabled();
   bool isScramblingSupported = bta_av_co_is_scrambling_enabled();
   osi_property_get("persist.vendor.bt.a2dp_offload_cap", value, "false");
   A2DP_SetOffloadStatus(a2dp_offload, value, isScramblingSupported);
+#endif // ENABLE_SPLIT_A2DP
 /* SPLITA2DP */
   bool isMcastSupported = btif_av_is_multicast_supported();
   bool isShoSupported = (btif_max_av_clients > 1) ? true : false;
+  #ifdef ENABLE_SPLIT_A2DP
   if (a2dp_offload) {
     isMcastSupported = false;
     isShoSupported = false;
   }
+  #endif // ENABLE_SPLIT_A2DP
   bta_av_co_cb.codecs->init(isMcastSupported, isShoSupported);
   A2DP_InitDefaultCodec(bta_av_co_cb.codec_config);
   mutex_global_unlock();

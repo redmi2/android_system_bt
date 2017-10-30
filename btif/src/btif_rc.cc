@@ -413,7 +413,9 @@ static int btif_max_rc_clients = 1;
 extern bool btif_hf_call_terminated_recently();
 extern bool btif_hf_is_call_vr_idle();
 extern bool check_cod(const bt_bdaddr_t* remote_bdaddr, uint32_t cod);
+#ifdef ENABLE_SPLIT_A2DP
 extern bool btif_av_is_split_a2dp_enabled();
+#endif // ENABLE_SPLIT_A2DP
 extern int btif_av_idx_by_bdaddr(BD_ADDR bd_addr);
 extern bool btif_av_check_flag_remote_suspend(int index);
 extern bt_status_t btif_hf_check_if_sco_connected();
