@@ -345,6 +345,17 @@ bt_status_t btif_dm_get_remote_services(bt_bdaddr_t* remote_addr);
 
 /*******************************************************************************
  *
+ * Function         btif_dm_get_remote_services_from_app
+ *
+ * Description      Start SDP to get remote services
+ *
+ * Returns          bt_status_t
+ *
+ ******************************************************************************/
+bt_status_t btif_dm_get_remote_services_from_app(bt_bdaddr_t* remote_addr);
+
+/*******************************************************************************
+ *
  * Function         btif_dm_get_remote_services_by_transport
  *
  * Description      Start SDP to get remote services by transport
