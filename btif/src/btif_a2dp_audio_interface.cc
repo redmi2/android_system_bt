@@ -246,6 +246,20 @@ void btif_a2dp_audio_interface_init() {
 void btif_a2dp_audio_interface_deinit() {
   LOG_INFO(LOG_TAG,"btif_a2dp_audio_interface_deinit");
   deinit_pending = true;
+
+  if (btAudio != nullptr) {
+    tBTA_AV_STATUS status = A2DP_CTRL_ACK_DISCONNECT_IN_PROGRESS;
+    if (a2dp_cmd_pending == A2DP_CTRL_CMD_START) {
+      LOG_INFO(LOG_TAG,"calling method a2dp_on_started");
+      btAudio->a2dp_on_started(mapToStatus(status));
+    } else if ((a2dp_cmd_pending == A2DP_CTRL_CMD_SUSPEND)
+        || (a2dp_cmd_pending == A2DP_CTRL_CMD_STOP)) {
+      LOG_INFO(LOG_TAG,"calling method a2dp_on_started");
+      btAudio->a2dp_on_suspended(mapToStatus(status));
+    }
+    a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
+  }
+
   if (btAudio != nullptr) {
     auto ret = btAudio->deinitialize_callbacks();
     if (!ret.isOk()) {
@@ -268,6 +282,7 @@ void btif_a2dp_audio_on_started(tBTA_AV_STATUS status)
     if (a2dp_cmd_pending == A2DP_CTRL_CMD_START) {
       LOG_INFO(LOG_TAG,"calling method a2dp_on_started");
       btAudio->a2dp_on_started(mapToStatus(status));
+      a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
     }
   }
 }
@@ -279,6 +294,7 @@ void btif_a2dp_audio_on_suspended(tBTA_AV_STATUS status)
     if (a2dp_cmd_pending == A2DP_CTRL_CMD_SUSPEND || a2dp_cmd_pending == A2DP_CTRL_CMD_STOP) {
       LOG_INFO(LOG_TAG,"calling method a2dp_on_suspended");
       btAudio->a2dp_on_suspended(mapToStatus(status));
+      a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
     }
   }
 }
@@ -295,10 +311,12 @@ void btif_a2dp_audio_on_stopped(tBTA_AV_STATUS status)
       if (a2dp_cmd_pending == A2DP_CTRL_CMD_STOP || a2dp_cmd_pending == A2DP_CTRL_CMD_SUSPEND) {
         LOG_INFO(LOG_TAG,"calling method a2dp_on_stopped");
         btAudio->a2dp_on_stopped(mapToStatus(status));
+        a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
       } else if ((a2dp_cmd_pending == A2DP_CTRL_CMD_START) &&
           (!(btif_av_is_under_handoff() || reconfig_a2dp))) {
         LOG_INFO(LOG_TAG,"Remote disconnected when start under progress");
         btAudio->a2dp_on_started(mapToStatus(A2DP_CTRL_ACK_DISCONNECT_IN_PROGRESS));
+        a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
       }
     }
   }
