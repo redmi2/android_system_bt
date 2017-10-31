@@ -825,4 +825,16 @@ extern tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr,
 
 extern void btm_ble_multi_adv_cleanup(void);
 
+/*******************************************************************************
+ *
+ * Function         BTM_GetRemoteDeviceName
+ *
+ * Description      This function is called to get the dev name of remote device
+ *                  from NV
+ *
+ * Returns          TRUE if success; otherwise failed.
+ *
+ ******************************************************************************/
+extern bool BTM_GetRemoteDeviceName(BD_ADDR bda, BD_NAME bdname);
+
 #endif
