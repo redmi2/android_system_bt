@@ -2534,7 +2534,7 @@ void btm_acl_paging(BT_HDR* p, BD_ADDR bda) {
           (btm_cb.connecting_bda[3] << 16) + (btm_cb.connecting_bda[4] << 8) +
               btm_cb.connecting_bda[5]);
       if (btm_cb.paging &&
-          memcmp(bda, btm_cb.connecting_bda, BD_ADDR_LEN) != 0) {
+          memcmp(bda, btm_cb.connecting_bda, BD_ADDR_LEN) == 0) {
         fixed_queue_enqueue(btm_cb.page_queue, p);
       } else {
         p_dev_rec = btm_find_or_alloc_dev(bda);
