@@ -3358,7 +3358,8 @@ bt_status_t btif_av_execute_service(bool b_enable) {
     for (i = 0; i < btif_max_av_clients; i++ ) {
       if (btif_av_cb[i].sm_handle != NULL) {
         state = btif_sm_get_state(btif_av_cb[i].sm_handle);
-        if (state==BTIF_AV_STATE_OPENING) {
+        BTIF_TRACE_DEBUG("BT is shutting down, state=%d", state);
+        if ((state==BTIF_AV_STATE_OPENING) ||(state == BTIF_AV_STATE_OPENED) ||(state == BTIF_AV_STATE_STARTED)){
           BTIF_TRACE_DEBUG("Moving State from Opening to Idle due to BT ShutDown");
           btif_sm_change_state(btif_av_cb[i].sm_handle, BTIF_AV_STATE_IDLE);
           btif_queue_advance();
