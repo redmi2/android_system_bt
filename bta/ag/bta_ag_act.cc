@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+
 #include <string.h>
 
 #include "bta_ag_api.h"
@@ -183,7 +184,6 @@ void bta_ag_start_dereg(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
  ******************************************************************************/
 void bta_ag_start_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
   BD_ADDR pending_bd_addr;
-  tBTA_AG_RFC     *p_buf;
 
   /* store parameters */
   if (p_data) {
@@ -207,10 +207,8 @@ void bta_ag_start_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
              p_scb->peer_addr[2], p_scb->peer_addr[3], p_scb->peer_addr[4],
              p_scb->peer_addr[5]);
         // send ourselves close event for clean up
-        p_buf = (tBTA_AG_RFC *) osi_malloc(sizeof(tBTA_AG_RFC));
-        p_buf->hdr.event = BTA_AG_RFC_CLOSE_EVT;
-        p_buf->hdr.layer_specific = bta_ag_scb_to_idx(p_scb);
-        bta_sys_sendmsg(p_buf);
+        bta_ag_cback_open(p_scb, NULL, BTA_AG_FAIL_RFCOMM);
+        bdcpy(p_scb->peer_addr, bd_addr_null);
         return;
       }
     }
