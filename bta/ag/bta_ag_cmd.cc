@@ -1100,6 +1100,14 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       APPL_TRACE_DEBUG("%s BRSF HF: 0x%x, phone: 0x%x", __func__,
                        p_scb->peer_features, features);
 
+      if (interop_match_addr(INTEROP_DISABLE_CODEC_NEGOTIATION,
+         (const bt_bdaddr_t*)p_scb->peer_addr))
+      {
+          APPL_TRACE_IMP("%s disable codec negotiation for phone, remote" \
+                                  "for blacklisted device", __func__);
+          features = features & ~(BTA_AG_FEAT_CODEC);
+          p_scb->peer_features = p_scb->peer_features & ~(BTA_AG_PEER_FEAT_CODEC);
+      }
       /* send BRSF, send OK */
       bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BRSF, NULL, (int16_t)features);
       bta_ag_send_ok(p_scb);
