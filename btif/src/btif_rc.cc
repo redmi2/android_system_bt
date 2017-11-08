@@ -1731,6 +1731,29 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
 
   bdcpy(rc_addr.address, p_dev->rc_addr);
 
+  if (interop_match_addr(INTEROP_DISABLE_PLAYER_APPLICATION_SETTING_CMDS,
+            (bt_bdaddr_t *) &rc_addr))
+  {
+      if (event == AVRC_PDU_LIST_PLAYER_APP_ATTR || event == AVRC_PDU_GET_PLAYER_APP_VALUE_TEXT ||
+          event == AVRC_PDU_GET_CUR_PLAYER_APP_VALUE || event == AVRC_PDU_SET_PLAYER_APP_VALUE ||
+          event == AVRC_PDU_GET_PLAYER_APP_ATTR_TEXT || event == AVRC_PDU_LIST_PLAYER_APP_VALUES)
+      {
+          send_reject_response (p_dev->rc_handle, label, pavrc_cmd->pdu,
+                                AVRC_STS_BAD_PARAM, pavrc_cmd->cmd.opcode);
+          BTIF_TRACE_DEBUG("Blacklisted CK send AVRC_PDU_LIST_PLAYER_APP_ATTR reject");
+          return;
+      }
+      if ((pavrc_cmd->reg_notif.event_id == BTRC_EVT_APP_SETTINGS_CHANGED) &&
+                (event == AVRC_PDU_REGISTER_NOTIFICATION))
+      {
+          send_reject_response (p_dev->rc_handle, label, pavrc_cmd->pdu,
+                                AVRC_STS_BAD_PARAM, pavrc_cmd->cmd.opcode);
+          p_dev->rc_notif[BTRC_EVT_APP_SETTINGS_CHANGED - 1].bNotify = FALSE;
+          BTIF_TRACE_DEBUG("Blacklisted CK send BTRC_EVT_APP_SETTINGS_CHANGED not implemented")
+          return;
+      }
+  }
+
   if (!(p_dev->rc_features & BTA_AV_FEAT_APP_SETTING) && ((event == AVRC_PDU_LIST_PLAYER_APP_ATTR)
       || (event == AVRC_PDU_LIST_PLAYER_APP_VALUES) || (event == AVRC_PDU_GET_CUR_PLAYER_APP_VALUE)
       || (event == AVRC_PDU_SET_PLAYER_APP_VALUE) || (event == AVRC_PDU_GET_PLAYER_APP_ATTR_TEXT)
@@ -2827,6 +2850,12 @@ static bt_status_t register_notification_rsp(
                sizeof(btrc_uid_t));
         break;
       case BTRC_EVT_APP_SETTINGS_CHANGED:
+        if (interop_match_addr(INTEROP_DISABLE_PLAYER_APPLICATION_SETTING_CMDS,
+                    (bt_bdaddr_t *) bd_addr))
+        {
+            BTIF_TRACE_DEBUG("Blacklisted CK for BTRC_EVT_APP_SETTINGS_CHANGED event");
+            return BT_STATUS_UNHANDLED;
+        }
         avrc_rsp.reg_notif.param.player_setting.num_attr = p_param->player_setting.num_attr;
         memcpy(&avrc_rsp.reg_notif.param.player_setting.attr_id,
                                    p_param->player_setting.attr_ids, 2);
