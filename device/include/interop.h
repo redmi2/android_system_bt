@@ -192,6 +192,11 @@ typedef enum {
   // from DUT, thus increase this collision timeout.
   INTEROP_INCREASE_COLL_DETECT_TIMEOUT,
 
+  // Disable profile connection for headsets/car-kits
+  // Some car kits going bad state when DUT initiate profile connection in collision scenerio
+  // Hence don't initaite profile level connections and wait for incoming connetcion
+  INTEROP_DISABLE_CONNECTION_AFTER_COLLISION,
+
   END_OF_INTEROP_LIST
 
 } interop_feature_t;
