@@ -473,6 +473,12 @@ static void btif_av_collission_timer_timeout(UNUSED_ATTR void *data) {
   btif_sm_state_t av_state;
   BD_ADDR av_address;
 
+  if(!btif_storage_is_device_bonded(target_bda)){
+    BTIF_TRACE_IMP("btif_av_collission_timer_timeout: not bonded device ");
+    return;
+  }else{
+    BTIF_TRACE_IMP("btif_av_collission_timer_timeout: bonded device ");
+  }
   bdcpy(av_address, target_bda->address);
   av_state = btif_get_conn_state_of_device(av_address);
   BTIF_TRACE_DEBUG("%s(): AV state: %d", __func__, av_state);
