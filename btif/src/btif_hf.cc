@@ -1772,8 +1772,7 @@ static bt_status_t configure_wbs(bt_bdaddr_t* bd_addr,
   return BT_STATUS_SUCCESS;
 }
 
-// TODO: Comment out libhardware dependency
-/*static void set_voip_network_type_wifi_hci_cmd_complete(tBTM_VSC_CMPL* p_data)
+static void set_voip_network_type_wifi_hci_cmd_complete(tBTM_VSC_CMPL* p_data)
 {
     uint8_t         *stream,  status, subcmd;
     uint16_t        opcode, length;
@@ -1791,7 +1790,7 @@ static bt_status_t configure_wbs(bt_bdaddr_t* bd_addr,
             BTIF_TRACE_DEBUG("btm_SetVoipNetworkTypeWifi status success");
         }
     }
-}*/
+}
 
 /*******************************************************************************
 **
@@ -1802,9 +1801,8 @@ static bt_status_t configure_wbs(bt_bdaddr_t* bd_addr,
 ** Returns          bt_status_t
 **
 *******************************************************************************/
-// TODO: Comment out libhardware dependency
-/*static bt_status_t voip_network_type_wifi(bthf_voip_state_t isVoipStarted,
-                                          bthf_voip_call_network_type_t isNetworkWifi)
+static bt_status_t voip_network_type_wifi(bthf_voip_state_t isVoipStarted,
+                                           bthf_voip_call_network_type_t isNetworkWifi)
 {
     uint8_t           cmd[3], *p_cursor;
     uint8_t           sub_cmd = HCI_VSC_SUBCODE_VOIP_NETWORK_WIFI;
@@ -1828,7 +1826,7 @@ static bt_status_t configure_wbs(bt_bdaddr_t* bd_addr,
     BTM_VendorSpecificCommand(HCI_VSC_VOIP_NETWORK_WIFI_OCF, sizeof(cmd),
             cmd, set_voip_network_type_wifi_hci_cmd_complete);
     return BT_STATUS_SUCCESS;
-}*/
+}
 
 static const bthf_interface_t bthfInterface = {
     sizeof(bthfInterface),
@@ -1850,7 +1848,7 @@ static const bthf_interface_t bthfInterface = {
     cleanup,
     configure_wbs,
     bind_response,
-    //voip_network_type_wifi, // TODO: Comment out libhardware dependency
+    voip_network_type_wifi,
 };
 
 /*******************************************************************************
