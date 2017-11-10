@@ -721,7 +721,7 @@ A2dpCodecConfigAac::A2dpCodecConfigAac(
     btav_a2dp_codec_priority_t codec_priority)
     : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_AAC, "AAC", codec_priority) {
 
-  if (A2DP_GetOffloadStatus()) {
+  if (A2DP_GetOffloadStatus() && !A2DP_IsScramblingSupported()) {
     a2dp_aac_caps = a2dp_aac_offload_caps;
     a2dp_aac_default_config = a2dp_aac_default_offload_config;
   }else {
