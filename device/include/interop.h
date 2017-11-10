@@ -183,6 +183,10 @@ typedef enum {
   // SCO Connection.
   INTEROP_DISABLE_CODEC_NEGOTIATION,
 
+  // Some Carkits being AVRCP v1.3 upon receiving Play Application Setting Command Response
+  // and notification, doesn't send Passthrough commands back to DUT in Streaming State
+  INTEROP_DISABLE_PLAYER_APPLICATION_SETTING_CMDS,
+
   END_OF_INTEROP_LIST
 
 } interop_feature_t;
