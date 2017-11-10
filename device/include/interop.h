@@ -178,6 +178,11 @@ typedef enum {
   // which may lead to remotes not rendering SCO audio.
   INTEROP_DELAY_SCO_FOR_MT_CALL,
 
+  // Some remotes are taking too long to respond for codec negotiation.
+  // Disable codec negotiation for such remotes and directly initiate
+  // SCO Connection.
+  INTEROP_DISABLE_CODEC_NEGOTIATION,
+
   END_OF_INTEROP_LIST
 
 } interop_feature_t;
