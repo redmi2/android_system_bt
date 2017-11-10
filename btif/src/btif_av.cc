@@ -1542,7 +1542,7 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
   int i;
   bool hal_suspend_pending = false;
   tA2DP_CTRL_CMD pending_cmd = btif_a2dp_get_pending_command();
-
+  bool remote_start_cancelled = false;
   BTIF_TRACE_IMP("%s event:%s flags %x  index =%d", __func__,
                    dump_av_sm_event_name((btif_av_sm_event_t)event),
                    btif_av_cb[index].flags, index);
@@ -1774,6 +1774,11 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
         if (btif_a2dp_source_is_remote_start()) {
           BTIF_TRACE_DEBUG("%s:cancel remote start timer",__func__);
           btif_a2dp_source_cancel_remote_start();
+          /*
+           * Remote sent avdtp start followed by avdtp suspend, setting
+           * the flag not to update the play state to app
+           */
+          remote_start_cancelled = true;
         }
         btif_av_cb[index].remote_started = false;
       }
@@ -1827,6 +1832,10 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
         btif_av_cb[index].is_device_playing = false;
         btif_av_cb[index].current_playing = false;
         btif_av_update_current_playing_device(index);
+      } else if (!enable_multicast && remote_start_cancelled) {
+          BTIF_TRACE_IMP("%s Don't update audio state as remote started and suspended", __func__);
+          if (btif_av_cb[index].flags & BTIF_AV_FLAG_REMOTE_SUSPEND)
+            btif_av_cb[index].flags &= ~BTIF_AV_FLAG_REMOTE_SUSPEND;
       }
       else
       {
@@ -1840,6 +1849,7 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
         }
       }
 
+      remote_start_cancelled = false;
       // if not successful, remain in current state
       if (p_av->suspend.status != BTA_AV_SUCCESS) {
         btif_av_cb[index].flags &= ~BTIF_AV_FLAG_LOCAL_SUSPEND_PENDING;
@@ -1849,7 +1859,6 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
           btif_a2dp_source_set_tx_flush(false);
         return false;
       }
-
       btif_av_cb[index].is_suspend_for_remote_start = false;
       btif_av_cb[index].is_device_playing = false;
       btif_sm_change_state(btif_av_cb[index].sm_handle, BTIF_AV_STATE_OPENED);
