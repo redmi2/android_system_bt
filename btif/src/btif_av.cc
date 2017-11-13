@@ -47,7 +47,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "btif/include/btif_a2dp_source.h"
-
+#include "device/include/interop.h"
 
 /*****************************************************************************
  *  Constants & Macros
@@ -56,6 +56,7 @@
 #define BTIF_AVK_SERVICE_NAME "Advanced Audio Sink"
 
 #define BTIF_TIMEOUT_AV_OPEN_ON_RC_MS (2 * 1000)
+#define BTIF_TIMEOUT_AV_COLL_DETECTED_MS_2 (5 * 1000)
 
 /* Number of BTIF-AV control blocks */
 /* Now supports Two AV connections. */
@@ -524,11 +525,21 @@ static void btif_av_check_and_start_collission_timer(int index) {
     alarm_cancel(av_coll_detected_timer);
     BTIF_TRACE_DEBUG("btif_av_check_and_start_collission_timer:Deleting previously queued timer");
   }
-  alarm_set_on_queue(av_coll_detected_timer,
-                     BTIF_TIMEOUT_AV_COLL_DETECTED_MS,
-                     btif_av_collission_timer_timeout,
-                     NULL,
-                     btu_general_alarm_queue);
+  if (interop_match_addr(INTEROP_INCREASE_COLL_DETECT_TIMEOUT, &btif_av_cb[index].peer_bda))
+  {
+      /* Increase collision detected timeout */
+      alarm_set_on_queue(av_coll_detected_timer,
+      BTIF_TIMEOUT_AV_COLL_DETECTED_MS_2,
+      btif_av_collission_timer_timeout,
+      NULL,
+      btu_general_alarm_queue);
+   } else {
+       alarm_set_on_queue(av_coll_detected_timer,
+                 BTIF_TIMEOUT_AV_COLL_DETECTED_MS,
+                 btif_av_collission_timer_timeout,
+                 NULL,
+                 btu_general_alarm_queue);
+   }
 }
 
 
