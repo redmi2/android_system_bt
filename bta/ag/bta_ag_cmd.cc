@@ -36,6 +36,8 @@
 #include "utl.h"
 #include <cutils/properties.h>
 #include "device/include/interop.h"
+#include "btif/include/btif_storage.h"
+
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
@@ -1100,8 +1102,22 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       APPL_TRACE_DEBUG("%s BRSF HF: 0x%x, phone: 0x%x", __func__,
                        p_scb->peer_features, features);
 
+      bt_property_t prop_name;
+      bt_bdname_t bdname;
+      bool remote_name = FALSE;
+
+      BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME,
+              sizeof(bt_bdname_t), &bdname);
+      if (btif_storage_get_remote_device_property((bt_bdaddr_t*)p_scb->peer_addr,
+                   &prop_name) == BT_STATUS_SUCCESS)
+      {
+          remote_name = TRUE;
+      }
+
       if (interop_match_addr(INTEROP_DISABLE_CODEC_NEGOTIATION,
-         (const bt_bdaddr_t*)p_scb->peer_addr))
+              (const bt_bdaddr_t*)p_scb->peer_addr) ||
+              (remote_name && interop_match_name(INTEROP_DISABLE_CODEC_NEGOTIATION,
+              (const char *)bdname.name)))
       {
           APPL_TRACE_IMP("%s disable codec negotiation for phone, remote" \
                                   "for blacklisted device", __func__);
