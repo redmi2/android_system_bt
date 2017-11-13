@@ -230,6 +230,21 @@ static tBTA_AV_CO_PEER* bta_av_co_get_peer(tBTA_AV_HNDL hndl) {
   return &bta_av_co_cb.peers[index];
 }
 
+uint8_t* bta_av_co_get_peer_codec_info(tBTA_AV_HNDL hndl) {
+  uint8_t index;
+  index = BTA_AV_CO_AUDIO_HNDL_TO_INDX(hndl);
+  APPL_TRACE_DEBUG("%s: handle = %d index = %d", __func__, hndl, index);
+  /* Sanity check */
+  if (index >= BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers)) {
+    APPL_TRACE_ERROR("%s: peer index out of bounds: %d", __func__, index);
+    return NULL;
+  }
+  APPL_TRACE_ERROR("%s ", __func__);
+  for (int i = 0; i < AVDT_CODEC_SIZE; i++)
+    APPL_TRACE_ERROR("%d ", bta_av_co_cb.peers[index].codec_config[i]);
+  return bta_av_co_cb.peers[index].codec_config;
+}
+
 /*******************************************************************************
  **
  ** Function         bta_av_co_audio_init

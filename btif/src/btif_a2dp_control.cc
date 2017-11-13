@@ -45,6 +45,7 @@ extern int btif_av_get_latest_device_idx_to_start();
 extern int btif_get_is_remote_started_idx();
 extern tBTA_AV_HNDL btif_av_get_av_hdl_from_idx(int idx);
 extern bool btif_av_is_playing_on_other_idx(int current_index);
+extern bool btif_av_is_handoff_set();
 extern int btif_max_av_clients;
 
 static void btif_a2dp_data_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event);
@@ -52,6 +53,7 @@ static void btif_a2dp_ctrl_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event);
 
 /* We can have max one command pending */
 static tA2DP_CTRL_CMD a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
+bool is_block_hal_start = false;
 
 void btif_a2dp_control_init(void) {
   UIPC_Init(NULL);
@@ -119,6 +121,13 @@ static void btif_a2dp_recv_ctrl_data(void) {
         break;
       }
 
+      if (btif_av_is_handoff_set() && is_block_hal_start) {
+        APPL_TRACE_WARNING("%s: A2DP command %s under handoff and HAL Start block",
+                           __func__, audio_a2dp_hw_dump_ctrl_event(cmd));
+        btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
+        break;
+      }
+
       if (btif_a2dp_source_is_streaming()) {
         APPL_TRACE_WARNING("%s: A2DP command %s while source is streaming, return",
                            __func__, audio_a2dp_hw_dump_ctrl_event(cmd));
@@ -179,6 +188,14 @@ static void btif_a2dp_recv_ctrl_data(void) {
         if (btif_av_get_peer_sep(idx) == AVDT_TSEP_SRC)
           btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
         break;
+      } else if (btif_av_is_handoff_set() && !(is_block_hal_start)) {
+          APPL_TRACE_DEBUG("%s: Entertain Audio Start after stream open", __func__);
+          UIPC_Open(UIPC_CH_ID_AV_AUDIO, btif_a2dp_data_cb);
+          btif_dispatch_sm_event(BTIF_AV_START_STREAM_REQ_EVT, NULL, 0);
+          int idx = btif_av_get_latest_device_idx_to_start();
+          if (btif_av_get_peer_sep(idx) == AVDT_TSEP_SRC)
+            btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
+          break;
       }
 
       APPL_TRACE_WARNING("%s: A2DP command %s while AV stream is not ready",
@@ -350,6 +367,13 @@ static void btif_a2dp_recv_ctrl_data(void) {
                 sizeof(tA2DP_LATENCY));
       break;
     }
+
+    case A2DP_CTRL_CMD_STREAM_OPEN:
+      APPL_TRACE_DEBUG("Accept Audio Start after Stream open");
+      is_block_hal_start = false;
+      btif_a2dp_source_cancel_unblock_audio_start();
+      btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
+      break;
 
     default:
       APPL_TRACE_ERROR("UNSUPPORTED CMD (%d)", cmd);

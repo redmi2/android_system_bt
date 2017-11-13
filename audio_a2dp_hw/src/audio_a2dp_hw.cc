@@ -1740,6 +1740,7 @@ static int adev_open_output_stream(struct audio_hw_device* dev,
   *stream_out = &out->stream;
   a2dp_dev->output = out;
 
+  a2dp_command(&out->common, A2DP_CTRL_CMD_STREAM_OPEN);
   INFO("success");
   /* Delay to ensure Headset is in proper state when START is initiated from
    * DUT immediately after the connection due to ongoing music playback. */

@@ -77,6 +77,7 @@ extern int btif_get_is_remote_started_idx();
 extern bool btif_av_is_playing_on_other_idx(int current_index);
 extern int btif_get_is_remote_started_idx();
 extern bool reconfig_a2dp;
+extern bool audio_start_awaited;
 bool deinit_pending = false;
 static void btif_a2dp_audio_send_start_req();
 static void btif_a2dp_audio_send_suspend_req();
@@ -509,6 +510,19 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd)
           status = A2DP_CTRL_ACK_PENDING;
         }
       }
+
+      if (audio_start_awaited) {
+        if (reconfig_a2dp || (btif_av_is_under_handoff())) {
+          APPL_TRACE_DEBUG("Audio start awaited handle start under handoff");
+          audio_start_awaited = false;
+          btif_dispatch_sm_event(BTIF_AV_START_STREAM_REQ_EVT, NULL, 0);
+          int idx = btif_av_get_latest_device_idx_to_start();
+          if (btif_av_get_peer_sep(idx) == AVDT_TSEP_SRC)
+            status = A2DP_CTRL_ACK_SUCCESS;
+          break;
+        }
+      }
+
       /* In dual a2dp mode check for stream started first*/
       if (btif_av_stream_started_ready()) {
         /*
