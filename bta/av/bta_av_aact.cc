@@ -820,8 +820,13 @@ void bta_av_switch_role(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     } else {
       /* this should not happen in theory. Just in case...
        * continue to do_disc_a2dp */
-      APPL_TRACE_DEBUG("%s: Role switch request completed", __func__);
-      switch_res = BTA_AV_RS_DONE;
+
+       if(!p_scb->num_disc_snks) {
+          /* Only there is no discovered sink list, then do discovery */
+          APPL_TRACE_DEBUG("%s: continue discovery request(hndl:0x%x)",
+                             __func__, p_scb->hndl);
+          switch_res = BTA_AV_RS_DONE;
+        }
     }
   } else {
     /* report failure on OPEN */
