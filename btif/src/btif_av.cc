@@ -80,6 +80,7 @@ typedef enum {
 #define BTIF_AV_FLAG_REMOTE_SUSPEND 0x2
 #define BTIF_AV_FLAG_PENDING_START 0x4
 #define BTIF_AV_FLAG_PENDING_STOP 0x8
+#define BTIF_AV_FLAG_PENDING_DISCONNECT 0x10
 #define BTIF_TIMEOUT_AV_COLL_DETECTED_MS (2 * 1000)
 #define BTIF_ERROR_SRV_AV_CP_NOT_SUPPORTED   705
 
@@ -2922,6 +2923,8 @@ static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid) {
 
     BTIF_TRACE_ERROR("%s: All indexes are full", __func__);
 
+    btif_report_connection_state(BTAV_CONNECTION_STATE_DISCONNECTED, bd_addr);
+
     /* Multicast: Check if AV slot is available for connection
      * If not available, AV got connected to different devices.
      * Disconnect this RC connection without AV connection.
@@ -3216,7 +3219,7 @@ bool btif_av_stream_ready(void) {
       status = false;
       break;
     } else if (btif_av_cb[i].flags &
-               (BTIF_AV_FLAG_REMOTE_SUSPEND|BTIF_AV_FLAG_PENDING_STOP)) {
+        (BTIF_AV_FLAG_REMOTE_SUSPEND|BTIF_AV_FLAG_PENDING_STOP|BTIF_AV_FLAG_PENDING_DISCONNECT)) {
       status = false;
       break;
     } else if (btif_av_cb[i].state == BTIF_AV_STATE_OPENED)
@@ -3368,10 +3371,17 @@ bt_status_t btif_av_execute_service(bool b_enable) {
       if (btif_av_cb[i].sm_handle != NULL) {
         state = btif_sm_get_state(btif_av_cb[i].sm_handle);
         BTIF_TRACE_DEBUG("BT is shutting down, state=%d", state);
-        if ((state==BTIF_AV_STATE_OPENING) ||(state == BTIF_AV_STATE_OPENED) ||(state == BTIF_AV_STATE_STARTED)){
-          BTIF_TRACE_DEBUG("Moving State from Opening to Idle due to BT ShutDown");
-          btif_sm_change_state(btif_av_cb[i].sm_handle, BTIF_AV_STATE_IDLE);
-          btif_queue_advance();
+        if ((state == BTIF_AV_STATE_OPENING) || (state == BTIF_AV_STATE_OPENED) ||
+            (state == BTIF_AV_STATE_STARTED)) {
+          BTIF_TRACE_DEBUG("Moving State from opened/started to Idle due to BT ShutDown");
+          if (btif_av_is_split_a2dp_enabled()) {
+            btif_a2dp_audio_interface_deinit();
+            btif_a2dp_audio_if_init = false;
+          }else{
+             btif_sm_change_state(btif_av_cb[i].sm_handle, BTIF_AV_STATE_IDLE);
+             btif_queue_advance();
+
+          }
         }
         btif_sm_shutdown(btif_av_cb[i].sm_handle);
         btif_av_cb[i].sm_handle = NULL;
