@@ -187,6 +187,11 @@ typedef enum {
   // and notification, doesn't send Passthrough commands back to DUT in Streaming State
   INTEROP_DISABLE_PLAYER_APPLICATION_SETTING_CMDS,
 
+  // When connection fails due to collision, DUT will reconnect A2dp
+  // every 2s till it succeeds. But some remotes will refuse reconnection
+  // from DUT, thus increase this collision timeout.
+  INTEROP_INCREASE_COLL_DETECT_TIMEOUT,
+
   END_OF_INTEROP_LIST
 
 } interop_feature_t;
