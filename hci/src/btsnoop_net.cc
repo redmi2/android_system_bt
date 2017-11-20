@@ -100,6 +100,7 @@ void btsnoop_net_write(const void* data, size_t length) {
 
 static void* listen_fn_(UNUSED_ATTR void* context) {
   fd_set sock_fds;
+  FD_ZERO(&sock_fds);
   int enable = 1;
   int fd_max = -1;
   struct timeval socket_timeout;
