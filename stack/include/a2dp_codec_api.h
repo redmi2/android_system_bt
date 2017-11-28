@@ -656,6 +656,8 @@ bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index,
 void A2DP_SetOffloadStatus(bool offload_status, char *offload_cap);
 bool A2DP_GetOffloadStatus();
 bool A2DP_IsCodecEnabledInOffload(btav_a2dp_codec_index_t codec_index);
+void print_codec_config(uint8_t codec_arry[]);
+void print_codec_parameters(btav_a2dp_codec_config_t config);
 // Add enum-based flag operators to the btav_a2dp_codec_config_t fields
 #ifndef DEFINE_ENUM_FLAG_OPERATORS
 #define DEFINE_ENUM_FLAG_OPERATORS(bitmask)                                 \
