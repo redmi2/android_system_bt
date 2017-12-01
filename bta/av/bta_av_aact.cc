@@ -321,6 +321,8 @@ static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const BD_ADDR b) {
     p_scb->suspend_sup = true;
   }
 
+  APPL_TRACE_DEBUG("%s: b:%02x-%02x-%02x-%02x-%02x-%02x", __func__,
+                          b[0], b[1], b[2], b[3],b[4], b[5]);
   /* do this copy anyway, just in case the first addr matches
    * the control block one by accident */
   bdcpy(p_scb->peer_addr, b);
@@ -572,6 +574,9 @@ static void bta_av_proc_stream_evt(uint8_t handle, BD_ADDR bd_addr,
     if (event == AVDT_SUSPEND_CFM_EVT) p_msg->initiator = true;
 
     APPL_TRACE_VERBOSE("%s: hndl:x%x", __func__, p_scb->hndl);
+    APPL_TRACE_DEBUG("%s: p_msg->bd_addr:%02x-%02x-%02x-%02x-%02x-%02x", __func__,
+                          p_msg->bd_addr[0], p_msg->bd_addr[1], p_msg->bd_addr[2], p_msg->bd_addr[3],
+                          p_msg->bd_addr[4], p_msg->bd_addr[5]);
     p_msg->hdr.layer_specific = p_scb->hndl;
     p_msg->handle = handle;
     p_msg->avdt_event = event;
