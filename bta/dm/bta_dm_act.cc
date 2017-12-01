@@ -3495,16 +3495,11 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
                 bta_dm_cb.switch_delay_timer, BTA_DM_SWITCH_DELAY_TIMER_MS,
                 bta_dm_delay_role_switch_cback, NULL, btu_bta_alarm_queue);
           }
-        } else if (br_count == 1) {
-          if (delay_role_switch == FALSE && BTM_GetWifiState()) {
-              BTM_SwitchRole (bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
-                              HCI_ROLE_MASTER, NULL);
-          }  else if(delay_role_switch == TRUE) {
-            alarm_set_on_queue(bta_dm_cb.switch_delay_timer,
-                           BTA_DM_SWITCH_DELAY_TIMER_MS,
-                           bta_dm_delay_role_switch_cback,
-                           NULL, btu_bta_alarm_queue);
-          }
+        } else if ((br_count == 1) &&
+                   (bta_dm_cb.device_list.peer_device[i].pref_role ==
+                    BTA_MASTER_ROLE_PREF)) {
+          BTM_SwitchRole(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
+                         HCI_ROLE_MASTER, NULL);
         }
       }
     }
