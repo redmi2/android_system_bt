@@ -201,7 +201,7 @@ int btif_av_idx_by_bdaddr(BD_ADDR bd_addr);
 static int btif_av_get_valid_idx_for_rc_events(BD_ADDR bd_addr, int rc_handle);
 static int btif_get_conn_state_of_device(BD_ADDR address);
 static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid);
-static void btif_av_update_current_playing_device(int index);
+void btif_av_update_current_playing_device(int index);
 static void btif_av_check_rc_connection_priority(void *p_data);
 static BD_ADDR bd_null= {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static bt_status_t connect_int(bt_bdaddr_t* bd_addr, uint16_t uuid);
@@ -3693,7 +3693,7 @@ bool btif_av_is_playing_on_other_idx(int current_index)
  * Returns          void
  *
  ******************************************************************************/
-static void btif_av_update_current_playing_device(int index) {
+void btif_av_update_current_playing_device(int index) {
   int i;
   for (i = 0; i < btif_max_av_clients; i++)
     if (i != index)
