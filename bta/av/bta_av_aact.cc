@@ -2662,8 +2662,6 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     L2CA_SetDesireRole(L2CAP_ROLE_ALLOW_SWITCH);
   }
 
-  L2CA_SetMediaStreamChannel(p_scb->l2c_cid, false);
-
   if (p_scb->open_status) {
     /* must be failure when opening the stream */
     bdcpy(data.open.bd_addr, p_scb->peer_addr);
