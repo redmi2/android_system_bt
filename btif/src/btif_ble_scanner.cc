@@ -45,6 +45,7 @@
 #include "btif_storage.h"
 #include "osi/include/log.h"
 #include "vendor_api.h"
+#include "stack_manager.h"
 
 using base::Bind;
 using base::Owned;
@@ -244,6 +245,8 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
   ~BleScannerInterfaceImpl(){};
 
   void RegisterScanner(RegisterCallback cb) override {
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
+
     do_in_bta_thread(FROM_HERE,
                      Bind(
                          [](RegisterCallback cb) {
@@ -255,10 +258,12 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
   }
 
   void Unregister(int scanner_id) override {
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     do_in_bta_thread(FROM_HERE, Bind(&BTA_GATTC_AppDeregister, scanner_id));
   }
 
   void Scan(bool start) override {
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     do_in_jni_thread(Bind(
         [](bool start) {
           if (!start) {
@@ -281,6 +286,8 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
       FilterParamSetupCallback cb) override {
     BTIF_TRACE_DEBUG("%s", __func__);
 
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
+
     if (filt_param && filt_param->dely_mode == 1) {
       do_in_bta_thread(
           FROM_HERE, base::Bind(BTM_BleTrackAdvertiser, bta_track_adv_event_cb,
@@ -302,6 +309,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
                            FilterConfigCallback cb) override {
     BTIF_TRACE_DEBUG("%s, %d, %d", __func__, action, filt_type);
 
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     /* If data is passed, both mask and data have to be the same length */
     if (data.size() != mask.size() && data.size() != 0 && mask.size() != 0)
       return;
@@ -384,6 +392,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
 
   void ScanFilterClear(int filter_index, FilterConfigCallback cb) override {
     BTIF_TRACE_DEBUG("%s: filter_index: %d", __func__, filter_index);
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     do_in_bta_thread(FROM_HERE,
                      base::Bind(&BTM_LE_PF_clear, filter_index,
                                 jni_thread_wrapper(
@@ -393,6 +402,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
   void ScanFilterEnable(bool enable, EnableCallback cb) override {
     BTIF_TRACE_DEBUG("%s: enable: %d", __func__, enable);
 
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     uint8_t action = enable ? 1 : 0;
     do_in_bta_thread(FROM_HERE,
                      base::Bind(&BTM_BleEnableDisableFilterFeature, action,
@@ -401,6 +411,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
 
   void SetScanParameters(int scan_interval, int scan_window,
                          Callback cb) override {
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     do_in_bta_thread(
         FROM_HERE, base::Bind(&BTM_BleSetScanParams, scan_interval, scan_window,
                               BTM_BLE_SCAN_MODE_ACTI,
@@ -411,6 +422,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
                               int batch_scan_trunc_max,
                               int batch_scan_notify_threshold,
                               Callback cb) override {
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     do_in_bta_thread(
         FROM_HERE,
         base::Bind(&BTM_BleSetStorageConfig, (uint8_t)batch_scan_full_max,
@@ -422,6 +434,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
 
   void BatchscanEnable(int scan_mode, int scan_interval, int scan_window,
                        int addr_type, int discard_rule, Callback cb) override {
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     do_in_bta_thread(
         FROM_HERE, base::Bind(&BTM_BleEnableBatchScan, scan_mode, scan_interval,
                               scan_window, discard_rule, addr_type,
@@ -429,11 +442,13 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
   }
 
   void BatchscanDisable(Callback cb) override {
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     do_in_bta_thread(FROM_HERE, base::Bind(&BTM_BleDisableBatchScan,
                                            jni_thread_wrapper(FROM_HERE, cb)));
   }
 
   void BatchscanReadReports(int client_if, int scan_mode) override {
+    if (!stack_manager_get_interface()->get_stack_is_running()) return;
     do_in_bta_thread(FROM_HERE,
                      base::Bind(&BTM_BleReadScanReports, (uint8_t)scan_mode,
                                 Bind(bta_batch_scan_reports_cb, client_if)));
