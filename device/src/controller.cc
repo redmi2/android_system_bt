@@ -346,6 +346,9 @@ static future_t* start_up(void) {
         if(osi_property_set("persist.vendor.bt.soc.scram_freqs", value))
           LOG_WARN(LOG_TAG, "%s persist.vendor.bt.soc.scram_freqs set to %s",
               __func__, value);
+      } else {
+        // reset the property
+        osi_property_set("persist.vendor.bt.soc.scram_freqs", "");
       }
     }
   }
