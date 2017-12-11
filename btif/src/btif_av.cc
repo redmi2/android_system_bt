@@ -3445,6 +3445,7 @@ bt_status_t btif_av_execute_service(bool b_enable) {
              if (pending_cmd) {
                  btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
              }
+             btif_a2dp_source_on_stopped(NULL);
              btif_sm_change_state(btif_av_cb[i].sm_handle, BTIF_AV_STATE_IDLE);
              btif_queue_advance();
 
