@@ -3551,6 +3551,9 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       mtu = MAX_2MBPS_AVDTP_MTU;
     }
 
+    mtu = mtu + AVDT_MEDIA_HDR_SIZE;
+    APPL_TRACE_DEBUG("%s Adding AVDTP media Header in stream_mtu : %d", __func__, mtu);
+
     if (mtu > BTA_AV_MAX_A2DP_MTU)
         mtu = BTA_AV_MAX_A2DP_MTU;
 
