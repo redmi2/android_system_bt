@@ -1931,16 +1931,6 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
                 &rc_addr);
     } break;
     case AVRC_PDU_REGISTER_NOTIFICATION: {
-      if (pavrc_cmd->reg_notif.event_id == BTRC_EVT_PLAY_POS_CHANGED) {
-        BTIF_TRACE_WARNING(
-            "%s: Device registering position changed with illegal param 0.",
-            __func__);
-        send_reject_response(p_dev->rc_handle, label, pavrc_cmd->pdu,
-                             AVRC_STS_BAD_PARAM, pavrc_cmd->cmd.opcode);
-        /* de-register this notification for a rejected response */
-        p_dev->rc_notif[BTRC_EVT_PLAY_POS_CHANGED - 1].bNotify = false;
-        return;
-      }
       HAL_CBACK(bt_rc_callbacks, register_notification_cb,
                 (btrc_event_id_t)pavrc_cmd->reg_notif.event_id,
                 pavrc_cmd->reg_notif.param, &rc_addr);
