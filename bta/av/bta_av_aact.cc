@@ -431,7 +431,7 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   tAVDT_GETCAP_REQ* p_req;
   bool sent_cmd = false;
   uint16_t uuid_int = p_scb->uuid_int;
-  uint8_t sep_requested = 0;
+  uint8_t sep_requested = AVDT_TSEP_SNK;
 
   if (uuid_int == UUID_SERVCLASS_AUDIO_SOURCE)
     sep_requested = AVDT_TSEP_SNK;
