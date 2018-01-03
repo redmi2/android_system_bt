@@ -417,7 +417,7 @@ extern bool btif_av_is_split_a2dp_enabled();
 extern int btif_av_idx_by_bdaddr(BD_ADDR bd_addr);
 extern bool btif_av_check_flag_remote_suspend(int index);
 extern bt_status_t btif_hf_check_if_sco_connected();
-
+extern void btif_av_update_current_playing_device(int index);
 extern fixed_queue_t* btu_general_alarm_queue;
 
 /*****************************************************************************
@@ -6356,6 +6356,26 @@ static bt_status_t is_device_active_in_handoff(bt_bdaddr_t *bd_addr) {
   }
 }
 
+static bt_status_t update_play_status_to_stack(btrc_play_status_t play_state) {
+  BTIF_TRACE_DEBUG("%s", __func__)
+  if (play_state == PLAY_STATUS_PLAYING) {
+    //CHECK for remote suspend
+    //clear remote suspend and intiate start
+    int index = 0;
+    for (index = 0; index < btif_max_rc_clients; index++) {
+      if (btif_av_check_flag_remote_suspend(index) == true) {
+        break;
+      }
+    }
+    if (index == btif_max_rc_clients) {
+      BTIF_TRACE_ERROR("%s:invalid index,remote suspend not set", __func__);
+      return BT_STATUS_FAIL;
+    }
+    btif_av_clear_remote_suspend_flag();
+    btif_dispatch_sm_event(BTIF_AV_START_STREAM_REQ_EVT, NULL, 0);
+  }
+  return BT_STATUS_SUCCESS;
+}
 static const btrc_interface_t bt_rc_interface = {
     sizeof(bt_rc_interface),
     init,
@@ -6379,6 +6399,7 @@ static const btrc_interface_t bt_rc_interface = {
     search_rsp,
     add_to_now_playing_rsp,
     is_device_active_in_handoff,
+    update_play_status_to_stack,
     cleanup,
 };
 
